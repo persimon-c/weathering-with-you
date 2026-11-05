@@ -1,10 +1,6 @@
 # Weathering With You
 
-CMSC 170 Artificial Intelligence Project
-
-## Group name
-
-Weathering With You
+CMSC 170 AI Project
 
 ## Members
 
