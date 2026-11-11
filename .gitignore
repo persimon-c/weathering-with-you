@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.vscode/
+.pytest_cache/
+
+# Raw PhilSA shapefiles, downloaded by scripts/download.py
+data/raw/
