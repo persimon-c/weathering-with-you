@@ -10,6 +10,20 @@ Typhoons and the southwest monsoon flood large parts of the Philippines every ye
 
 We ask it this way because of a data check on 4 and 5 November, run on every Sentinel-1 file. It found that where an area is explains most of whether it floods, and that rain before the pass adds very little once the place is known. The project measures that properly and explains why each method behaves the way it does.
 
+## Changes from Milestone 1
+
+The dataset, the task type and the methods are the ones approved at M1. These details changed after the data check, and the M2 report explains them.
+
+| Item | At M1 | Now | Why |
+|---|---|---|---|
+| Question | Predict if an area flooded from the weather before the flood | How well can we predict flooding in a new storm, and how much does weather add beyond the place | Weather alone predicted about at chance. A 3-day rain rule scored AUC 0.51 on 2025 |
+| Data | 87 events, 83 with shapefiles, all sensors | 61 Sentinel-1 passes from 63 shapefiles | Other sensors detect floods differently and publish different map layouts |
+| Row | One tile in one flood event | One satellite pass in one 0.5 degree cell with at least one flood polygon | Some events have several passes, and almost every land cell has some detected water |
+| Label | Flooded or not | Flooded if more than 1 percent of the cell is flooded | Detection versus none would make nearly every row flooded |
+| Features | Rainfall, soil wetness, humidity, temperature | The same weather, plus place (latitude, longitude, elevation) and season | Place explained most of the flooding in the data check |
+| Split | Not decided | Train 2022 to 2024, validate 2025, test 2026 | Passes of the same storm must not sit on both sides |
+| Methods | Gaussian Naive Bayes, KNN, logistic regression, optional small neural network | Unchanged | |
+
 ## Data
 
 | Source | What it gives | Access |
@@ -62,6 +76,18 @@ Almost every land cell in a pass has some detected water, so "any flood polygon"
 | Place | `lat`, `lon`, `elevation` | Cell center, MERRA-2 elevation from the NASA POWER header |
 | Weather | `rain_1d`, `rain_3d`, `rain_7d`, `rain_14d`, `rain_21d`, `rain_30d`, `humidity`, `temperature`, `soil_wetness` | NASA POWER daily. Rain sums end the day before the pass. The rest are the day before |
 | Season | `month_sin`, `month_cos` | Month of the pass |
+
+### NASA POWER parameters
+
+| Column | NASA POWER parameter | Unit |
+|---|---|---|
+| `rain_*` | `PRECTOTCORR`, corrected total precipitation | mm per day, summed over the window |
+| `humidity` | `RH2M`, relative humidity at 2 m | percent |
+| `temperature` | `T2M`, air temperature at 2 m | degrees Celsius |
+| `soil_wetness` | `GWETROOT`, root-zone soil wetness | 0 to 1 |
+| `elevation` | Header line "elevation from MERRA-2" | meters |
+
+Request them together with `community=AG`. Use `GWETROOT` rather than `GWETTOP`, the surface layer, because the root zone stays wet over several days of rain and so reflects how saturated the ground is before a flood.
 
 Soil wetness is missing on every day at 8 cells that NASA POWER treats as ocean. Decide one policy before M2 ends, either drop the column or fill it and add a missing flag, and write it in the README.
 
