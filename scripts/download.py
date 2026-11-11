@@ -1,6 +1,6 @@
 # Download the PhilSA flood shapefiles listed in data/acquisitions.csv.
-# HDX blocks bursts of requests, so files go one at a time with a pause,
-# and each file is kept only when it arrived complete.
+# HDX blocks bursts of requests (HTTP 202), so files go one at a time with
+# a pause, are retried after longer waits, and are kept only when complete.
 #
 # Usage:
 #   python scripts/download.py
@@ -23,8 +23,15 @@ RAW_DIR = os.path.join(ROOT, "data", "raw")
 # Download settings
 USER_AGENT = "weathering-with-you/1.0 (CMSC 170 class project)"
 DELAY = 15                      # seconds between requests
+RETRY_WAITS = [120, 300, 600]   # seconds before each retry
+RETRY_HTTP = (429, 500, 502, 503, 504)
 CHUNK = 1024 * 1024             # read 1 MB at a time
 ZIP_MAGIC = b"PK\x03\x04"       # first bytes of every zip file
+
+
+# Raised when HDX answers 202 instead of the file
+class SlowDown(Exception):
+    pass
 
 
 # Rows of acquisitions.csv for one sensor
@@ -65,6 +72,9 @@ def fetch(url, part_path):
 
     # urllib follows HDX's redirect to the storage link
     with urllib.request.urlopen(request, timeout=120) as response:
+        if response.status == 202:
+            raise SlowDown()
+
         with open(part_path, "wb") as file:
             while True:
                 chunk = response.read(CHUNK)
@@ -75,28 +85,54 @@ def fetch(url, part_path):
                 file.write(chunk)
 
 
-# Download one file, True on success
+# Download one file with retries, True on success
 def download(row, out_dir):
     path = os.path.join(out_dir, row["file"])
     part_path = path + ".part"
     expected_size = int(row["size"])
 
-    try:
-        fetch(row["url"], part_path)
+    # First try at once, then wait longer before each retry
+    for wait in [0] + RETRY_WAITS:
+        if wait:
+            print(f"    waiting {wait // 60} min before retrying")
+            time.sleep(wait)
 
-    except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
-        print(f"    network error: {error}")
-        return False
+        try:
+            fetch(row["url"], part_path)
 
-    # Keep the file only if it arrived whole
-    if not is_complete(part_path, expected_size):
-        size = os.path.getsize(part_path)
-        os.remove(part_path)
-        print(f"    got {size} bytes, expected {expected_size}")
-        return False
+        except SlowDown:
+            print("    HDX asked us to slow down (HTTP 202)")
+            continue
 
-    os.replace(part_path, path)
-    return True
+        except urllib.error.HTTPError as error:
+            # Missing or forbidden files will not appear on a retry
+            if error.code not in RETRY_HTTP:
+                print(f"    HTTP {error.code}, giving up on this file")
+                return False
+
+            print(f"    HTTP {error.code}")
+            continue
+
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
+            print(f"    network error: {error}")
+            continue
+
+        # Keep the file only if it arrived whole
+        if not is_complete(part_path, expected_size):
+            size = os.path.getsize(part_path)
+            os.remove(part_path)
+
+            if size != expected_size:
+                print(f"    got {size} bytes, expected {expected_size}")
+            else:
+                print("    the file is not a zip")
+
+            continue
+
+        os.replace(part_path, path)
+        return True
+
+    return False
 
 
 def main():
