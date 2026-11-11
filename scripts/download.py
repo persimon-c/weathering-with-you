@@ -1,10 +1,15 @@
 """
 Download the PhilSA flood shapefiles listed in data/acquisitions.csv.
 
-HDX blocks clients that send requests in bursts, so this script downloads
-one file at a time and waits between requests. It skips files that are
-already downloaded with the right size, and writes to a .part file first,
-so a stopped run never leaves a half-written zip that looks complete.
+HDX blocks clients that send requests in bursts. When it does, it answers
+with HTTP 202 and an empty body instead of the file. To stay polite and
+still finish, this script:
+
+- downloads one file at a time and waits between requests
+- waits a few minutes and retries when HDX answers 202
+- skips files that are already downloaded with the right size
+- writes to a .part file first, so a stopped run never leaves a
+  half-written zip that looks complete
 
 Usage (from anywhere in the repository):
     python scripts/download.py
@@ -26,8 +31,14 @@ RAW_DIR = os.path.join(ROOT, "data", "raw")
 
 USER_AGENT = "weathering-with-you/1.0 (CMSC 170 class project)"
 DELAY = 15                      # seconds between HDX requests
+RETRY_WAITS = [120, 300, 600]   # seconds to wait before each retry
+RETRY_HTTP = (429, 500, 502, 503, 504)
 CHUNK = 1024 * 1024             # read the response 1 MB at a time
 ZIP_MAGIC = b"PK\x03\x04"       # every zip file starts with these bytes
+
+
+class SlowDown(Exception):
+    """HDX answered 202, its signal that we are sending requests too fast."""
 
 
 def load_rows(path, sensor):
@@ -71,7 +82,7 @@ def fetch(url, part_path):
     Stream one URL into part_path.
 
     HDX first redirects to a temporary storage link, which urllib follows
-    on its own.
+    on its own. Raises SlowDown when HDX answers 202 instead of the file.
     """
 
     request = urllib.request.Request(
@@ -80,6 +91,9 @@ def fetch(url, part_path):
     )
 
     with urllib.request.urlopen(request, timeout=120) as response:
+        if response.status == 202:
+            raise SlowDown()
+
         with open(part_path, "wb") as file:
             while True:
                 chunk = response.read(CHUNK)
@@ -92,32 +106,58 @@ def fetch(url, part_path):
 
 def download(row, out_dir):
     """
-    Download one shapefile zip.
+    Download one shapefile zip, retrying after waits if needed.
 
     Returns:
-        True if the file is now complete, False otherwise.
+        True if the file is now complete, False if every attempt failed.
     """
 
     path = os.path.join(out_dir, row["file"])
     part_path = path + ".part"
     expected_size = int(row["size"])
 
-    try:
-        fetch(row["url"], part_path)
+    # The first attempt goes right away, each retry waits longer
+    for wait in [0] + RETRY_WAITS:
+        if wait:
+            print(f"    waiting {wait // 60} min before retrying")
+            time.sleep(wait)
 
-    except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
-        print(f"    network error: {error}")
-        return False
+        try:
+            fetch(row["url"], part_path)
 
-    # Only keep the file if it arrived whole
-    if not is_complete(part_path, expected_size):
-        size = os.path.getsize(part_path)
-        os.remove(part_path)
-        print(f"    got {size} bytes, expected {expected_size}")
-        return False
+        except SlowDown:
+            print("    HDX asked us to slow down (HTTP 202)")
+            continue
 
-    os.replace(part_path, path)
-    return True
+        except urllib.error.HTTPError as error:
+            # Missing or forbidden files will not appear on a retry
+            if error.code not in RETRY_HTTP:
+                print(f"    HTTP {error.code}, giving up on this file")
+                return False
+
+            print(f"    HTTP {error.code}")
+            continue
+
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
+            print(f"    network error: {error}")
+            continue
+
+        # Only keep the file if it arrived whole
+        if not is_complete(part_path, expected_size):
+            size = os.path.getsize(part_path)
+            os.remove(part_path)
+
+            if size != expected_size:
+                print(f"    got {size} bytes, expected {expected_size}")
+            else:
+                print("    the file is not a zip")
+
+            continue
+
+        os.replace(part_path, path)
+        return True
+
+    return False
 
 
 def main():
