@@ -80,3 +80,33 @@ def read_shp(data):
 
     return polygons
 
+
+# Attribute table of a .dbf file as (field names, one dict per record)
+def read_dbf(data):
+    # Header: record count, header length and record length
+    n_records, header_length, record_length = struct.unpack("<IHH", data[4:12])
+
+    # 32-byte field descriptors, ending at the 0x0D terminator
+    fields = []
+    offset = 32
+
+    while data[offset] != 0x0D:
+        name = data[offset:offset + 11].split(b"\x00")[0].decode("latin-1")
+        length = data[offset + 16]
+        fields.append((name, length))
+        offset += 32
+
+    # Fixed-width records; the first byte is the deletion flag, so values start at 1
+    rows = []
+
+    for index in range(n_records):
+        position = header_length + index * record_length + 1
+        row = {}
+
+        for name, length in fields:
+            row[name] = data[position:position + length].decode("latin-1").strip()
+            position += length
+
+        rows.append(row)
+
+    return [name for name, _ in fields], rows
