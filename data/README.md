@@ -30,7 +30,14 @@ The project uses the 63 rows with sensor `s1`. Twelve HDX datasets hold more tha
 
 ## Getting the raw files
 
-Download the `s1` rows of `acquisitions.csv` into `data/raw/`, and keep that folder out of git.
+Run this from the repository folder:
 
-- HDX blocks scripts that send requests in bursts and answers `202` with an empty body. Send one request about every 15 seconds and retry after a few minutes on a `202`.
-- Five 2026 files end in `.zip.zip` and contain a zip inside a zip.
+```
+python scripts/download.py
+```
+
+It downloads the 63 `s1` rows of `acquisitions.csv` into `data/raw/`, which git ignores. A full run takes about 50 minutes, most of it the 15-second pauses and the downloads. Run it again after a stop and it skips the files that are already complete. `python scripts/download.py --dry-run` lists what is still missing without downloading.
+
+- HDX blocks scripts that send requests in bursts and answers `202` with an empty body. The script waits 15 seconds between files and waits 2, 5 and then 10 minutes before retrying a file after a `202`.
+- A file only counts as complete when its size matches the `size` column and it starts like a zip.
+- Five 2026 files end in `.zip.zip` and contain a zip inside a zip. The script downloads them as they are.
