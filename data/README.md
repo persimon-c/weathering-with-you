@@ -12,7 +12,22 @@ License: the PhilSA data is CC BY. Credit "Philippine Space Agency (PhilSA), via
 |---|---|---|
 | `acquisitions.csv` | Yes | Every PhilSA shapefile on HDX, 97 rows, listed on 4 November 2026 |
 | `raw/` | No | The downloaded shapefile zips, about 430 MB |
+| `interim/flood_cells.csv` | Yes | Flooded area per satellite pass and 0.5 degree cell, 3,531 rows over 61 passes |
 | `processed/flood_data.csv` | Yes, once built | One row per satellite pass and 0.5 degree cell. Columns are listed in `design.md` |
+
+### `interim/flood_cells.csv` columns
+
+Built by `python -m src.cells` from the zips in `raw/`, which takes about a minute.
+
+| Column | Meaning |
+|---|---|
+| `event_id` | Satellite pass, date and pass time, for example `20260907_1807`. The three 2024-10-27 regional files share one ID |
+| `lon_min`, `lat_min` | South-west corner of the 0.5 degree cell |
+| `n_polygons` | Flood polygons whose bounding-box center falls in the cell |
+| `flood_km2` | Their total area in square km, holes subtracted |
+| `flood_share` | `flood_km2` as a percent of the whole cell, sea included |
+
+Only cells with at least one flood polygon appear.
 
 ### `acquisitions.csv` columns
 

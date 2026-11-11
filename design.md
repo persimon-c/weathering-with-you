@@ -67,7 +67,7 @@ Almost every land cell in a pass has some detected water, so "any flood polygon"
 - Area of each polygon with the shoelace formula, after scaling longitude by the cosine of the latitude so degrees become kilometers.
 - Polygons can have holes, so subtract inner rings. Some polygons are wound the wrong way, so take the absolute area per polygon.
 - Assign each polygon to the cell that holds its bounding-box center.
-- Only 2026 files have a `Class` field, so count every polygon as flooded in every year.
+- Only files from 2025-11-11 on have a `Class` field, so count every polygon as flooded in every year.
 
 ## Features
 
