@@ -17,7 +17,10 @@ from src.baselines import (
     majority_predict,
     choose_rain_cutoff,
     rain_predict,
-)
+    fit_place_history,
+    place_history_scores,
+    place_history_predict,
+    )
 
 
 def main():
@@ -52,6 +55,20 @@ def main():
     cutoff = choose_rain_cutoff(train["X"], y_train)
     rain_predictions = rain_predict(X_val, cutoff)
 
+    # Learn historical flood rates from training data only.
+    place_rates, overall_rate = fit_place_history(
+        train["X"], y_train
+    )
+
+    # Score 2025 validation cells.
+    place_scores = place_history_scores(
+        X_val, place_rates, overall_rate
+    )
+
+    place_predictions = place_history_predict(
+        X_val, place_rates, overall_rate
+    )
+
     # Normalize rainfall scores using training-derived bounds.
     rain_index = FEATURES.index("rain_3d")
     
@@ -81,6 +98,12 @@ def main():
             rain_scores,
             clusters,
         ),
+        "place_history": evaluate_by_cluster(
+            y_val,
+            place_predictions,
+            place_scores,
+            clusters,
+        ),
     }
 
     output = Path("results/baselines_val.json")
@@ -94,7 +117,7 @@ def main():
     print(f"Validation rows: {len(y_val)}")
     print(f"Rainfall cutoff: {cutoff:.3f}")
 
-    for name in ("majority", "rainfall"):
+    for name in ("majority", "rainfall", "place_history"):
         scores = results[name]["overall"]
         print(f"\n{name.upper()}")
         print(f"Accuracy: {scores['accuracy']:.4f}")
