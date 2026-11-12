@@ -29,7 +29,7 @@ The dataset, the task type and the methods are the ones approved at M1. These de
 | Source | What it gives | Access |
 |---|---|---|
 | PhilSA flood extent maps on the Humanitarian Data Exchange (HDX) | Flood polygons per satellite pass, the labels | `https://data.humdata.org/organization/philsa`, CC BY, no login |
-| NASA POWER daily point API, row 4 of the instructor's list | Rain, humidity, temperature and soil wetness per day, plus grid elevation in the response header | `https://power.larc.nasa.gov/api/temporal/daily/point`, no login |
+| NASA POWER daily point API, row 4 of the instructor's list | Rain, humidity, temperature and soil wetness per day, plus grid elevation in the response body | `https://power.larc.nasa.gov/api/temporal/daily/point`, no login |
 
 The instructor approved using the two together as one task.
 
@@ -73,7 +73,7 @@ Almost every land cell in a pass has some detected water, so "any flood polygon"
 
 | Group | Columns | Source |
 |---|---|---|
-| Place | `lat`, `lon`, `elevation` | Cell center, MERRA-2 elevation from the NASA POWER header |
+| Place | `lat`, `lon`, `elevation` | Cell center, MERRA-2 elevation from the NASA POWER response body |
 | Weather | `rain_1d`, `rain_3d`, `rain_7d`, `rain_14d`, `rain_21d`, `rain_30d`, `humidity`, `temperature`, `soil_wetness` | NASA POWER daily. Rain sums end the day before the pass. The rest are the day before |
 | Season | `month_sin`, `month_cos` | Month of the pass |
 
@@ -85,7 +85,7 @@ Almost every land cell in a pass has some detected water, so "any flood polygon"
 | `humidity` | `RH2M`, relative humidity at 2 m | percent |
 | `temperature` | `T2M`, air temperature at 2 m | degrees Celsius |
 | `soil_wetness` | `GWETROOT`, root-zone soil wetness | 0 to 1 |
-| `elevation` | Header line "elevation from MERRA-2" | meters |
+| `elevation` | `geometry.coordinates[2]` in the response body, the MERRA-2 elevation | meters |
 
 Request them together with `community=AG`. Use `GWETROOT` rather than `GWETTOP`, the surface layer, because the root zone stays wet over several days of rain and so reflects how saturated the ground is before a flood.
 
@@ -173,7 +173,7 @@ All written from scratch.
 | `scripts/download.py` | Fetch the Sentinel-1 shapefiles slowly into `data/raw/` |
 | `src/shapefile.py` | Read `.shp` and `.dbf` with `struct` |
 | `src/cells.py` | Flooded area per pass and cell |
-| `src/weather.py` | Fetch NASA POWER per cell, cache the raw responses, skip the header, treat `-999` as missing |
+| `src/weather.py` | Fetch NASA POWER per cell, cache the raw responses, read elevation from `geometry.coordinates[2]` in the body, treat `header.fill_value` (about `-999`) as missing |
 | `scripts/build_dataset.py` | Join everything into `data/processed/flood_data.csv` |
 | `src/data.py` | Load the processed CSV |
 | `src/preprocess.py` | Standardize with training statistics, handle missing values |
