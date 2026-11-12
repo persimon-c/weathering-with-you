@@ -15,12 +15,14 @@ from src.split import split_data
 from src.metrics import evaluate_by_cluster
 from src.baselines import (
     majority_predict,
-    choose_rain_cutoff,
+    majority_predict_proba,
     rain_predict,
+    rain_predict_proba,
+    choose_rain_cutoff,
     fit_place_history,
     place_history_scores,
     place_history_predict,
-    )
+)
 
 
 def main():
@@ -39,21 +41,20 @@ def main():
         for row in val["metadata"]
     ]
 
-    # Majority class is learned from training data.
     majority_class = int(sum(y_train) > len(y_train) / 2)
-    majority_predictions = [
-        majority_class for _ in y_val
-    ]
-
-    # Constant probability based on training prevalence.
     prevalence = sum(y_train) / len(y_train)
-    majority_scores = [
-        prevalence for _ in y_val
-    ]
 
-    # Select rainfall cutoff using training data only.
+    majority_predictions = majority_predict(
+        X_val, majority_class
+    )
+    majority_scores = majority_predict_proba(
+        X_val, prevalence
+    )
+
     cutoff = choose_rain_cutoff(train["X"], y_train)
+
     rain_predictions = rain_predict(X_val, cutoff)
+    rain_scores = rain_predict_proba(X_val)
 
     # Learn historical flood rates from training data only.
     place_rates, overall_rate = fit_place_history(

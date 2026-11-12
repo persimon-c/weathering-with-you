@@ -2,14 +2,15 @@
 from src.data import FEATURES
 
 
-def majority_predict(X):
-    """Always predict not flooded (class 0)."""
-    return [0] * len(X)
+def majority_predict(X, majority_class=0):
+    """Predict the majority class learned from training data."""
+    return [majority_class] * len(X)
 
 
-def majority_predict_proba(X):
-    """Return the majority baseline's flood scores."""
-    return [0.0] * len(X)
+def majority_predict_proba(X, prevalence=0.0):
+    """Return the training flood prevalence as a constant score."""
+    return [prevalence] * len(X)
+
 
 
 def rain_predict(X, cutoff):
@@ -23,15 +24,16 @@ def rain_predict(X, cutoff):
 
 
 def rain_predict_proba(X):
-    """Rank samples by raw 3-day rainfall for ROC AUC."""
+    """Convert raw 3-day rainfall to ROC AUC ranking scores."""
+    import math
+
     rain_index = FEATURES.index("rain_3d")
-    rain = [row[rain_index] for row in X]
 
-    if any(value is None for value in rain):
-        raise ValueError("Missing rain_3d value.")
+    return [
+        0.5 + math.atan(row[rain_index]) / math.pi
+        for row in X
+    ]
 
-    # Scores are normalized later using training statistics.
-    return rain
 
 
 def choose_rain_cutoff(X_train, y_train):

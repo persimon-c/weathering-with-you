@@ -10,6 +10,7 @@ from src.baselines import (
     fit_place_history,
     place_history_scores,
     place_history_predict,
+    rain_predict_proba,
 )
 
 
@@ -120,6 +121,33 @@ class TestBaselines(unittest.TestCase):
         self.assertEqual(
             place_history_predict(X, rates, 0.5),
             [1, 0]
+        )
+
+    def test_majority_class_one(self):
+        X = self.make_rows([5, 10])
+
+        self.assertEqual(
+            majority_predict(X, 1),
+            [1, 1]
+    )
+
+
+    def test_majority_training_prevalence(self):
+        X = self.make_rows([5, 10])
+
+        self.assertEqual(
+            majority_predict_proba(X, 0.25),
+            [0.25, 0.25]
+        )
+
+
+    def test_rain_scores_preserve_order(self):
+        X = self.make_rows([0, 10, 50])
+
+        scores = rain_predict_proba(X)
+
+        self.assertTrue(
+            scores[0] < scores[1] < scores[2]
         )
 
 
