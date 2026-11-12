@@ -66,3 +66,57 @@ def choose_rain_cutoff(X_train, y_train):
             best_cutoff = cutoff
 
     return best_cutoff
+
+
+
+def fit_place_history(X_train, y_train):
+    """Calculate flood rates for each cell using training data."""
+    if len(X_train) != len(y_train) or not X_train:
+        raise ValueError("Invalid training data.")
+
+    lat_index = FEATURES.index("lat")
+    lon_index = FEATURES.index("lon")
+
+    counts = {}
+
+    for row, label in zip(X_train, y_train):
+        cell = (row[lat_index], row[lon_index])
+
+        if cell not in counts:
+            counts[cell] = [0, 0]
+
+        counts[cell][0] += label
+        counts[cell][1] += 1
+
+    rates = {
+        cell: flooded / total
+        for cell, (flooded, total) in counts.items()
+    }
+
+    overall_rate = sum(y_train) / len(y_train)
+
+    return rates, overall_rate
+
+
+def place_history_scores(X, rates, overall_rate):
+    """Return historical flood rates, using training prevalence for unseen cells."""
+    lat_index = FEATURES.index("lat")
+    lon_index = FEATURES.index("lon")
+
+    return [
+        rates.get(
+            (row[lat_index], row[lon_index]),
+            overall_rate
+        )
+        for row in X
+    ]
+
+
+def place_history_predict(X, rates, overall_rate, cutoff=0.5):
+    """Convert historical flood scores into binary predictions."""
+    scores = place_history_scores(X, rates, overall_rate)
+
+    return [
+        int(score >= cutoff)
+        for score in scores
+    ]
