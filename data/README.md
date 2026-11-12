@@ -13,7 +13,7 @@ License: the PhilSA data is CC BY. Credit "Philippine Space Agency (PhilSA), via
 | `acquisitions.csv` | Yes | Every PhilSA shapefile on HDX, 97 rows, listed on 4 November 2026 |
 | `raw/` | No | The downloaded shapefile zips, about 430 MB |
 | `interim/flood_cells.csv` | Yes | Flooded area per satellite pass and 0.5 degree cell, 3,531 rows over 61 passes |
-| `processed/flood_data.csv` | Yes, once built | One row per satellite pass and 0.5 degree cell. Columns are listed in `design.md` |
+| `processed/flood_data.csv` | Yes | One row per satellite pass and 0.5 degree cell, 3,531 rows and 25 columns. Built by `scripts/build_dataset.py` |
 
 ### `interim/flood_cells.csv` columns
 
@@ -42,6 +42,37 @@ Only cells with at least one flood polygon appear.
 | `n_maps_zips` | Number of map image zips in the same HDX dataset |
 
 The project uses the 63 rows with sensor `s1`. Twelve HDX datasets hold more than one shapefile, so download by row here, not by HDX dataset. The three `s1` files dated 2024-10-27 are regional pieces of one pass, so the 63 files make 61 passes.
+
+### `processed/flood_data.csv` columns
+
+Built by joining `interim/flood_cells.csv` with the NASA POWER weather cache:
+
+```
+python scripts/build_dataset.py
+```
+
+It has 3,531 rows and 25 columns. Sources and license are the same as above. Built 2026-11-12. Hashes are in `results/splits/sha256.txt`.
+
+| Column | Meaning |
+|---|---|
+| `event_id` | Satellite pass, as in the interim table |
+| `date`, `year` | Image date and its year |
+| `cluster_id` | Storm number, passes no more than 7 days apart share one |
+| `split` | `train` for 2022 to 2024, `val` for 2025, `test` for 2026 |
+| `lon_min`, `lat_min` | South-west corner of the 0.5 degree cell |
+| `lon`, `lat` | Cell center, the weather point |
+| `elevation` | Ground elevation at the cell center in meters |
+| `n_polygons`, `flood_km2`, `flood_share` | Copied from the interim table |
+| `flooded` | 1 when `flood_share` is over 1 percent, else 0 |
+| `rain_1d`, `rain_3d`, `rain_7d`, `rain_14d`, `rain_21d`, `rain_30d` | Rain in mm summed over that many days, ending the day before the pass |
+| `humidity`, `temperature`, `soil_wetness` | Weather on the day before the pass |
+| `month_sin`, `month_cos` | Month as a point on a circle, so December sits next to January |
+
+Every weather window ends the calendar day before the pass, so no feature uses the image date. `soil_wetness` is blank at 9 cells that NASA POWER treats as ocean.
+
+The split is frozen in `results/splits/`. `train.csv`, `validation.csv` and `test.csv` list the row indices of each set, and `sha256.txt` hashes the processed CSV and those three files, so another member can rebuild the exact same rows.
+
+The same cell flooding across passes, and a date with two passes such as `20251104`, are distinct rows, not duplicates. Keep both.
 
 ## Getting the raw files
 
