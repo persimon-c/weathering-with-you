@@ -87,3 +87,27 @@ It downloads the 63 `s1` rows of `acquisitions.csv` into `data/raw/`, which git 
 - HDX blocks scripts that send requests in bursts and answers `202` with an empty body. The script waits 15 seconds between files and waits 2, 5 and then 10 minutes before retrying a file after a `202`.
 - A file only counts as complete when its size matches the `size` column and it starts like a zip.
 - Five 2026 files end in `.zip.zip` and contain a zip inside a zip. The script downloads them as they are.
+
+
+### Missing Soil Wetness and Preprocessing
+
+The `soil_wetness` column contains missing values for 9 cells classified as ocean by NASA POWER. These values are handled during preprocessing rather than modifying the original dataset.
+
+**Missing value handling**
+- Missing `soil_wetness` values are replaced using the median calculated from the training split (2022–2024).
+- A binary feature named `soil_wetness_missing` is added:
+  - `1` if the original `soil_wetness` value was missing.
+  - `0` otherwise.
+- The same training median is used for validation (2025) and test (2026).
+
+**Feature standardization**
+- The original 14 numerical features are standardized using the training-set mean and standard deviation.
+- Columns with zero standard deviation use a divisor of `1` to avoid division by zero.
+- Training statistics are reused for validation and test data.
+- The `soil_wetness_missing` indicator is appended after standardization and is not standardized.
+
+**Resulting feature order**
+
+The preprocessing output contains 15 features: the original 14 features listed in `src/data.py`, followed by `soil_wetness_missing` as column 15.
+
+This approach prevents preprocessing statistics from leaking information from validation or test data.
