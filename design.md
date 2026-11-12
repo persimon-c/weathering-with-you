@@ -89,7 +89,7 @@ Almost every land cell in a pass has some detected water, so "any flood polygon"
 
 Request them together with `community=AG`. Use `GWETROOT` rather than `GWETTOP`, the surface layer, because the root zone stays wet over several days of rain and so reflects how saturated the ground is before a flood.
 
-Soil wetness is missing on every day at 8 cells that NASA POWER treats as ocean. Decide one policy before M2 ends, either drop the column or fill it and add a missing flag, and write it in the README.
+Soil wetness is missing on every day at 9 cells that NASA POWER treats as ocean. Decide one policy before M2 ends, either drop the column or fill it and add a missing flag, and write it in the README.
 
 All three methods use the same columns and the same preprocessing, fitted on training rows only.
 
