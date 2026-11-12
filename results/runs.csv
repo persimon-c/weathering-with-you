@@ -1,0 +1,2 @@
+timestamp_utc,run_id,git_commit,method,split,seed,hyperparameters,n_train,n_eval,accuracy,balanced_accuracy,precision,recall,f1,macro_f1,roc_auc,tp,tn,fp,fn
+20261112T140158Z,naive_bayes_val_seed42_20261112T140158Z,3151db5,naive_bayes,val,42,"{""var_floor"": 1e-09}",1966,987,0.749747,0.540372,0.273381,0.206522,0.235294,0.542844,0.685981,38,702,101,146
