@@ -1,2 +1,4 @@
-timestamp_utc,run_id,git_commit,method,split,seed,hyperparameters,n_train,n_eval,accuracy,balanced_accuracy,precision,recall,f1,macro_f1,roc_auc,tp,tn,fp,fn
-20261112T141100Z,logistic_val_seed42_20261112T141100Z,f8d6682,logistic,val,42,"{""lr"": 0.1, ""epochs"": 2000, ""reg"": 0.01, ""class_weight"": ""balanced""}",1966,987,0.736575,0.710329,0.381988,0.668478,0.486166,0.654527,0.756071,123,604,199,61
+timestamp_utc,run_id,git_commit,method,split,seed,hyperparameters,n_train,n_eval,accuracy,balanced_accuracy,precision,recall,f1,macro_f1,roc_auc,tp,tn,fp,fn,train_seconds,predict_seconds
+20261112T141502489224Z,majority_val_seed0_20261112T141502489224Z,fc2ee0b,majority,val,0,{},1966,987,0.8135764944275583,0.5,0.0,0.0,0.0,0.44860335195530726,0.5,0,803,0,184,,
+20261112T141502489224Z,rainfall_val_seed0_20261112T141502489224Z,fc2ee0b,rainfall,val,0,"{""cutoff"": 50.98}",1966,987,0.5825734549138805,0.5088526720450485,0.1935483870967742,0.391304347826087,0.2589928057553957,0.48422136761676693,0.5122299528940386,72,503,300,112,,
+20261112T141502489224Z,place_history_val_seed0_20261112T141502489224Z,fc2ee0b,place_history,val,0,"{""cutoff"": 0.5}",1966,987,0.8763931104356636,0.7815934809681087,0.6823529411764706,0.6304347826086957,0.6553672316384181,0.7900292948315547,0.9069386539606908,116,749,54,68,,
