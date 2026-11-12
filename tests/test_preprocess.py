@@ -111,5 +111,48 @@ class TestPreprocess(unittest.TestCase):
         self.assertIn("soil_median", params)
 
 
+    def test_validation_uses_training_median(self):
+        from src.data import FEATURES
+        from src.preprocess import fit_preprocess, transform_preprocess
+
+        soil_index = FEATURES.index("soil_wetness")
+
+        train = [[1.0] * len(FEATURES) for _ in range(3)]
+        train[0][soil_index] = 10.0
+        train[1][soil_index] = 20.0
+        train[2][soil_index] = 30.0
+
+        params = fit_preprocess(train)
+
+        validation = [[1.0] * len(FEATURES) for _ in range(2)]
+        validation[0][soil_index] = None
+        validation[1][soil_index] = 1000.0
+
+        transformed = transform_preprocess(validation, params)
+
+        # Training median is 20, and training std is about 8.165.
+        self.assertAlmostEqual(transformed[0][soil_index], 0.0)
+
+        # Missing-value indicator is the final column.
+        self.assertEqual(transformed[0][-1], 1.0)
+        self.assertEqual(transformed[1][-1], 0.0)
+
+
+    def test_zero_standard_deviation(self):
+        from src.data import FEATURES
+        from src.preprocess import fit_preprocess, transform_preprocess
+
+        train = [[5.0] * len(FEATURES) for _ in range(3)]
+
+        params = fit_preprocess(train)
+        transformed = transform_preprocess(train, params)
+
+        # Constant features should use std = 1, not 0.
+        self.assertTrue(all(std == 1.0 for std in params["stds"]))
+
+        # Standardized constant features should be zero.
+        self.assertTrue((transformed[:, :-1] == 0.0).all())
+
+
 if __name__ == "__main__":
     unittest.main()
