@@ -1,24 +1,28 @@
-# Train Naive Bayes and logistic regression, score on the 2025
-# validation split, and save results to results/.
+# Train Gaussian Naive Bayes and Logistic Regression on the training split,
+# score on the 2025 validation split, and append results to results/runs.csv.
 #
 # Usage:
-#   python scripts/run_models.py                           # real data
-#   python scripts/run_models.py --synthetic               # made-up data
-#
-# The --synthetic flag generates a small dataset that mimics the real
-# class balance (~17 % flooded) so the models can be tested before the
-# processed CSV exists.
+#   python scripts/run_models.py                      # evaluates available models
+#   python scripts/run_models.py --model nb           # only Naive Bayes
+#   python scripts/run_models.py --model logistic     # only Logistic Regression
 
 import argparse
 import csv
+from datetime import datetime, timezone
+import json
 import os
+import subprocess
 import sys
 
 import numpy as np
 
-# Allow imports from the repository root
+# Ensure repository root is on sys.path
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
+
+from src.data import load_data, FEATURES
+from src.split import split_data
+from src.metrics import evaluate
 
 try:
     from src.models.naive_bayes import GaussianNaiveBayes
@@ -31,256 +35,238 @@ except ImportError:
     LogisticRegression = None
 
 
-# ------------------------------------------------------------------
-# Feature columns from design.md
-# ------------------------------------------------------------------
-
-FEATURE_COLS = [
-    "lat", "lon", "elevation",
-    "rain_1d", "rain_3d", "rain_7d", "rain_14d", "rain_21d", "rain_30d",
-    "humidity", "temperature", "soil_wetness",
-    "month_sin", "month_cos",
+RUNS_HEADER = [
+    "timestamp_utc",
+    "run_id",
+    "git_commit",
+    "method",
+    "split",
+    "seed",
+    "hyperparameters",
+    "n_train",
+    "n_eval",
+    "accuracy",
+    "balanced_accuracy",
+    "precision",
+    "recall",
+    "f1",
+    "macro_f1",
+    "roc_auc",
+    "tp",
+    "tn",
+    "fp",
+    "fn",
 ]
 
-TARGET = "flooded"
-SPLIT_COL = "split"
+
+def get_git_commit():
+    """Retrieve short git commit hash from HEAD."""
+    try:
+        commit = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=ROOT,
+            text=True
+        ).strip()
+        return commit
+    except Exception:
+        return "unknown"
 
 
-# ------------------------------------------------------------------
-# Data loading helpers
-# ------------------------------------------------------------------
-
-def load_real_data(path):
-    """Load data/processed/flood_data.csv and split by the 'split' column."""
-    with open(path, "r", encoding="utf-8-sig", newline="") as f:
-        reader = csv.DictReader(f)
-        rows = list(reader)
-
-    def extract(split_name):
-        subset = [r for r in rows if r[SPLIT_COL] == split_name]
-        X = np.array([[float(r[c]) for c in FEATURE_COLS] for r in subset])
-        y = np.array([int(r[TARGET]) for r in subset])
-        return X, y
-
-    X_train, y_train = extract("train")
-    X_val, y_val = extract("val")
-
-    return X_train, y_train, X_val, y_val
-
-
-def make_synthetic_data(seed=42):
+def prepare_data(data_path):
     """
-    Generate synthetic data that mimics the real dataset's shape:
-    ~2000 training rows, ~1000 validation rows, ~17 % positive rate,
-    14 features.
+    Load dataset using src.data, split using src.split, handle missing
+    soil_wetness via training mean, and standardize features using
+    training statistics.
     """
-    rng = np.random.default_rng(seed)
+    X, y, metadata = load_data(data_path)
+    splits = split_data(X, y, metadata)
 
-    def generate(n, pos_rate=0.17):
-        n_pos = int(n * pos_rate)
-        n_neg = n - n_pos
-        # Negative class: centered near zero
-        X_neg = rng.standard_normal((n_neg, 14))
-        # Positive class: shifted to make it learnable
-        X_pos = rng.standard_normal((n_pos, 14)) + 0.8
-        X = np.vstack([X_neg, X_pos])
-        y = np.concatenate([np.zeros(n_neg), np.ones(n_pos)])
-        # Shuffle
-        idx = rng.permutation(n)
-        return X[idx], y[idx].astype(int)
+    soil_idx = FEATURES.index("soil_wetness")
 
-    X_train, y_train = generate(1966)
-    X_val, y_val = generate(987)
-    return X_train, y_train, X_val, y_val
+    # Compute training mean for soil_wetness (excluding None)
+    train_soil = [
+        row[soil_idx] for row in splits["train"]["X"]
+        if row[soil_idx] is not None
+    ]
+    soil_mean = float(np.mean(train_soil)) if train_soil else 0.0
 
+    def fill_and_to_array(rows):
+        filled = []
+        for row in rows:
+            row_copy = list(row)
+            if row_copy[soil_idx] is None:
+                row_copy[soil_idx] = soil_mean
+            filled.append(row_copy)
+        return np.array(filled, dtype=np.float64)
 
-# ------------------------------------------------------------------
-# Standardisation (training stats only)
-# ------------------------------------------------------------------
+    X_train = fill_and_to_array(splits["train"]["X"])
+    y_train = np.array(splits["train"]["y"], dtype=int)
 
-def standardise(X_train, X_val):
-    """Zero-mean, unit-variance using training statistics."""
+    X_val = fill_and_to_array(splits["val"]["X"])
+    y_val = np.array(splits["val"]["y"], dtype=int)
+
+    # Standardize using training statistics only
     mu = X_train.mean(axis=0)
     sigma = X_train.std(axis=0)
-    sigma[sigma == 0] = 1.0  # constant features stay zero
-    return (X_train - mu) / sigma, (X_val - mu) / sigma
+    sigma[sigma == 0] = 1.0
+
+    X_train_s = (X_train - mu) / sigma
+    X_val_s = (X_val - mu) / sigma
+
+    return X_train_s, y_train, X_val_s, y_val
 
 
-# ------------------------------------------------------------------
-# Simple metrics (used only when src/metrics.py is not ready)
-# ------------------------------------------------------------------
+def append_run_to_csv(runs_csv_path, record):
+    """Append a single run record to results/runs.csv with header if new."""
+    os.makedirs(os.path.dirname(runs_csv_path), exist_ok=True)
+    file_exists = os.path.isfile(runs_csv_path)
 
-def _confusion(y_true, y_pred):
-    tp = int(((y_true == 1) & (y_pred == 1)).sum())
-    tn = int(((y_true == 0) & (y_pred == 0)).sum())
-    fp = int(((y_true == 0) & (y_pred == 1)).sum())
-    fn = int(((y_true == 1) & (y_pred == 0)).sum())
-    return tp, tn, fp, fn
+    with open(runs_csv_path, "a", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        if not file_exists:
+            writer.writerow(RUNS_HEADER)
+
+        row = []
+        for col in RUNS_HEADER:
+            val = record.get(col, "")
+            if val is None:
+                row.append("")
+            elif isinstance(val, float):
+                row.append(f"{val:.6f}")
+            else:
+                row.append(str(val))
+        writer.writerow(row)
 
 
-def _basic_metrics(y_true, y_pred, y_score=None):
-    tp, tn, fp, fn = _confusion(y_true, y_pred)
-    n = tp + tn + fp + fn
+def run_model_eval(method_name, model, hyperparameters, seed,
+                   X_train, y_train, X_val, y_val, out_csv):
+    """Fit model, score on val using src.metrics.evaluate, and record to CSV."""
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    run_id = f"{method_name}_val_seed{seed}_{timestamp}"
+    commit = get_git_commit()
 
-    acc = (tp + tn) / n if n else 0
-    prec = tp / (tp + fp) if (tp + fp) else 0
-    rec = tp / (tp + fn) if (tp + fn) else 0
-    f1 = 2 * prec * rec / (prec + rec) if (prec + rec) else 0
+    print(f"\n=== {method_name} ===")
+    model.fit(X_train, y_train)
 
-    # Balanced accuracy
-    tpr = rec
-    tnr = tn / (tn + fp) if (tn + fp) else 0
-    bal_acc = (tpr + tnr) / 2
+    y_pred = model.predict(X_val)
+    proba = model.predict_proba(X_val)
+    # Binary classification: positive class probability
+    y_score = proba[:, 1] if proba.ndim == 2 and proba.shape[1] == 2 else proba
 
-    # Macro F1
-    prec_0 = tn / (tn + fn) if (tn + fn) else 0
-    rec_0 = tn / (tn + fp) if (tn + fp) else 0
-    f1_0 = 2 * prec_0 * rec_0 / (prec_0 + rec_0) if (prec_0 + rec_0) else 0
-    macro_f1 = (f1_0 + f1) / 2
+    metrics = evaluate(list(y_val), list(y_pred), list(y_score))
 
-    # ROC AUC (trapezoidal)
-    auc = None
-    if y_score is not None:
-        order = np.argsort(-y_score)
-        y_sorted = y_true[order]
-        n_pos = y_true.sum()
-        n_neg = n - n_pos
-        if n_pos > 0 and n_neg > 0:
-            tps = np.cumsum(y_sorted)
-            fps = np.cumsum(1 - y_sorted)
-            tpr_arr = np.concatenate([[0], tps / n_pos])
-            fpr_arr = np.concatenate([[0], fps / n_neg])
-            auc = float(np.trapezoid(tpr_arr, fpr_arr))
+    cm = metrics["confusion_matrix"]
+    print(f"  accuracy:          {metrics['accuracy']:.4f}")
+    if metrics["balanced_accuracy"] is not None:
+        print(f"  balanced_accuracy: {metrics['balanced_accuracy']:.4f}")
+    if metrics["precision"] is not None:
+        print(f"  precision:         {metrics['precision']:.4f}")
+    if metrics["recall"] is not None:
+        print(f"  recall:            {metrics['recall']:.4f}")
+    if metrics["f1"] is not None:
+        print(f"  f1:                {metrics['f1']:.4f}")
+    if metrics["macro_f1"] is not None:
+        print(f"  macro_f1:          {metrics['macro_f1']:.4f}")
+    if metrics["roc_auc"] is not None:
+        print(f"  roc_auc:           {metrics['roc_auc']:.4f}")
+    print(f"  confusion:         tp={cm['tp']} tn={cm['tn']} fp={cm['fp']} fn={cm['fn']}")
 
-    return {
-        "accuracy": acc,
-        "balanced_accuracy": bal_acc,
-        "precision": prec,
-        "recall": rec,
-        "f1": f1,
-        "macro_f1": macro_f1,
-        "roc_auc": auc,
-        "confusion": {"tp": tp, "tn": tn, "fp": fp, "fn": fn},
+    record = {
+        "timestamp_utc": timestamp,
+        "run_id": run_id,
+        "git_commit": commit,
+        "method": method_name,
+        "split": "val",
+        "seed": seed,
+        "hyperparameters": json.dumps(hyperparameters),
+        "n_train": len(y_train),
+        "n_eval": len(y_val),
+        "accuracy": metrics["accuracy"],
+        "balanced_accuracy": metrics["balanced_accuracy"],
+        "precision": metrics["precision"],
+        "recall": metrics["recall"],
+        "f1": metrics["f1"],
+        "macro_f1": metrics["macro_f1"],
+        "roc_auc": metrics["roc_auc"],
+        "tp": cm["tp"],
+        "tn": cm["tn"],
+        "fp": cm["fp"],
+        "fn": cm["fn"],
     }
 
+    append_run_to_csv(out_csv, record)
+    print(f"  Appended run record to {out_csv}")
 
-# ------------------------------------------------------------------
-# Save results
-# ------------------------------------------------------------------
-
-def save_results(name, metrics, out_dir):
-    """Write a metric summary CSV to results/."""
-    os.makedirs(out_dir, exist_ok=True)
-    path = os.path.join(out_dir, f"{name}_val_metrics.csv")
-
-    with open(path, "w", encoding="utf-8", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["metric", "value"])
-        for key, val in metrics.items():
-            if key == "confusion":
-                for k2, v2 in val.items():
-                    writer.writerow([f"confusion_{k2}", v2])
-            else:
-                writer.writerow([key, f"{val:.6f}" if val is not None else ""])
-
-    print(f"  Saved to {path}")
-
-
-# ------------------------------------------------------------------
-# Main
-# ------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Train NB and LR, score on validation."
+        description="Train NB and Logistic Regression on flood data."
     )
     parser.add_argument(
-        "--data", default=os.path.join(ROOT, "data", "processed", "flood_data.csv"),
-        help="path to the processed CSV"
-    )
-    parser.add_argument(
-        "--synthetic", action="store_true",
-        help="use made-up data instead of the real CSV"
+        "--data",
+        default=os.path.join(ROOT, "data", "processed", "flood_data.csv"),
+        help="path to processed flood_data.csv"
     )
     parser.add_argument(
         "--model", choices=["all", "nb", "logistic"], default="all",
         help="which model to evaluate (default: all available)"
     )
     parser.add_argument(
-        "--out", default=os.path.join(ROOT, "results"),
-        help="output directory (default: results/)"
+        "--runs-csv",
+        default=os.path.join(ROOT, "results", "runs.csv"),
+        help="output CSV file for runs (default: results/runs.csv)"
+    )
+    parser.add_argument(
+        "--seed", type=int, default=42,
+        help="random seed"
     )
     args = parser.parse_args()
 
-    # Load data
-    if args.synthetic:
-        print("Using synthetic data (--synthetic)")
-        X_train, y_train, X_val, y_val = make_synthetic_data()
-    else:
-        if not os.path.isfile(args.data):
-            print(f"ERROR: {args.data} not found.")
-            print("Run with --synthetic to test on made-up data,")
-            print("or wait for issues #3 and #4 to produce the CSV.")
-            return 1
-        print(f"Loading {args.data}")
-        X_train, y_train, X_val, y_val = load_real_data(args.data)
+    if not os.path.isfile(args.data):
+        print(f"ERROR: Dataset not found: {args.data}")
+        return 1
 
-    print(f"  Train: {X_train.shape[0]} rows, "
-          f"{y_train.sum():.0f} flooded ({100*y_train.mean():.1f}%)")
-    print(f"  Val:   {X_val.shape[0]} rows, "
-          f"{y_val.sum():.0f} flooded ({100*y_val.mean():.1f}%)")
+    print(f"Loading data from {args.data}...")
+    X_train_s, y_train, X_val_s, y_val = prepare_data(args.data)
+    print(f"  Train: {len(y_train)} rows ({100 * y_train.mean():.1f}% flooded)")
+    print(f"  Val:   {len(y_val)} rows ({100 * y_val.mean():.1f}% flooded)")
 
-    # Standardise
-    X_train_s, X_val_s = standardise(X_train, X_val)
+    # 1. Gaussian Naive Bayes
+    if args.model in ("all", "nb"):
+        if GaussianNaiveBayes is None:
+            if args.model == "nb":
+                print("ERROR: GaussianNaiveBayes is not imported.")
+                return 1
+        else:
+            hparams = {"var_floor": 1e-9}
+            nb = GaussianNaiveBayes(var_floor=hparams["var_floor"])
+            run_model_eval("naive_bayes", nb, hparams, args.seed,
+                           X_train_s, y_train, X_val_s, y_val, args.runs_csv)
 
-    # ---- Gaussian Naive Bayes ----------------------------------------
-    if args.model in ("all", "nb") and GaussianNaiveBayes is not None:
-        print("\n=== Gaussian Naive Bayes ===")
-        nb = GaussianNaiveBayes(var_floor=1e-9)
-        nb.fit(X_train_s, y_train)
+    # 2. Logistic Regression
+    if args.model in ("all", "logistic"):
+        if LogisticRegression is None:
+            if args.model == "logistic":
+                print("ERROR: LogisticRegression is not imported.")
+                return 1
+        else:
+            hparams = {
+                "lr": 0.1,
+                "epochs": 2000,
+                "reg": 0.01,
+                "class_weight": "balanced"
+            }
+            lr = LogisticRegression(
+                lr=hparams["lr"],
+                epochs=hparams["epochs"],
+                reg=hparams["reg"],
+                class_weight=hparams["class_weight"],
+                seed=args.seed
+            )
+            run_model_eval("logistic", lr, hparams, args.seed,
+                           X_train_s, y_train, X_val_s, y_val, args.runs_csv)
 
-        nb_pred = nb.predict(X_val_s)
-        nb_proba = nb.predict_proba(X_val_s)[:, 1]
-        nb_metrics = _basic_metrics(y_val, nb_pred, nb_proba)
-
-        for k, v in nb_metrics.items():
-            if k != "confusion":
-                print(f"  {k}: {v:.4f}" if v is not None else f"  {k}: N/A")
-        cm = nb_metrics["confusion"]
-        print(f"  confusion: TP={cm['tp']} TN={cm['tn']} FP={cm['fp']} FN={cm['fn']}")
-
-        save_results("naive_bayes", nb_metrics, args.out)
-    elif args.model == "nb" and GaussianNaiveBayes is None:
-        print("ERROR: GaussianNaiveBayes could not be imported.")
-
-    # ---- Logistic Regression -----------------------------------------
-    if args.model in ("all", "logistic") and LogisticRegression is not None:
-        print("\n=== Logistic Regression (L2, balanced weights) ===")
-        lr = LogisticRegression(
-            lr=0.1, epochs=2000, reg=0.01,
-            class_weight="balanced", seed=42
-        )
-        lr.fit(X_train_s, y_train)
-
-        lr_pred = lr.predict(X_val_s)
-        lr_proba = lr.predict_proba(X_val_s)[:, 1]
-        lr_metrics = _basic_metrics(y_val, lr_pred, lr_proba)
-
-        for k, v in lr_metrics.items():
-            if k != "confusion":
-                print(f"  {k}: {v:.4f}" if v is not None else f"  {k}: N/A")
-        cm = lr_metrics["confusion"]
-        print(f"  confusion: TP={cm['tp']} TN={cm['tn']} FP={cm['fp']} FN={cm['fn']}")
-
-        # Loss curve summary
-        loss = lr.loss_history_
-        print(f"  loss: start={loss[0]:.4f} end={loss[-1]:.4f}")
-
-        save_results("logistic", lr_metrics, args.out)
-    elif args.model == "logistic" and LogisticRegression is None:
-        print("ERROR: LogisticRegression could not be imported.")
-
-    print("\nDone.")
+    print("\nCompleted.")
     return 0
 
 
