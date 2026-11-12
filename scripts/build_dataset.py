@@ -10,6 +10,7 @@
 import argparse
 import csv
 import datetime
+import hashlib
 import math
 import os
 import sys
@@ -23,6 +24,10 @@ from src.weather import CELL, CACHE_DIR, load_cell
 
 CELLS_PATH = os.path.join(ROOT, "data", "interim", "flood_cells.csv")
 OUT_PATH = os.path.join(ROOT, "data", "processed", "flood_data.csv")
+SPLITS_DIR = os.path.join(ROOT, "results", "splits")
+
+# Split name in the CSV to the file that holds its row indices
+SPLIT_FILES = {"train": "train.csv", "val": "validation.csv", "test": "test.csv"}
 
 THRESHOLD = 1.0                       # flooded once the share passes this percent
 RAIN_WINDOWS = [1, 3, 7, 14, 21, 30]  # days summed, ending the day before the pass
@@ -76,10 +81,12 @@ def weather_row(cell, day_before):
     end = index[day_before]
     row = {"elevation": elevation}
 
-    # each window covers the days ending the day before the pass
+    # each window covers the days ending the day before the pass, and a day
+    # the API left blank is skipped rather than breaking the sum
     for window in RAIN_WINDOWS:
         start = end - window + 1
-        row[f"rain_{window}d"] = sum(values["PRECTOTCORR"][start:end + 1])
+        days = values["PRECTOTCORR"][start:end + 1]
+        row[f"rain_{window}d"] = sum(day for day in days if day is not None)
 
     # the single day before the pass, for the slow fields
     row["humidity"] = values["RH2M"][end]
@@ -97,6 +104,53 @@ def fmt(value, digits):
     return f"{value:.{digits}f}"
 
 
+# SHA-256 of a file, read in blocks so a large CSV stays light
+def file_sha256(path):
+    digest = hashlib.sha256()
+
+    with open(path, "rb") as file:
+        for block in iter(lambda: file.read(1 << 16), b""):
+            digest.update(block)
+
+    return digest.hexdigest()
+
+
+# The frozen split as row indices, plus a hash of the CSV and of every split
+# file, so another member rebuilds the exact same rows
+def write_splits(rows, processed_path, splits_dir):
+    os.makedirs(splits_dir, exist_ok=True)
+    written = []
+
+    for split, name in SPLIT_FILES.items():
+        path = os.path.join(splits_dir, name)
+
+        with open(path, "w", encoding="utf-8", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(["row_index"])
+
+            for index, row in enumerate(rows):
+                if row["split"] == split:
+                    writer.writerow([index])
+
+        written.append(path)
+
+    # Repository-relative paths, so the hash list means the same on any machine
+    def rel(path):
+        return os.path.relpath(path, ROOT)
+
+    lines = [f"{file_sha256(processed_path)}  {rel(processed_path)}"]
+
+    for path in written:
+        lines.append(f"{file_sha256(path)}  {rel(path)}")
+
+    hashes_path = os.path.join(splits_dir, "sha256.txt")
+
+    with open(hashes_path, "w", encoding="utf-8") as file:
+        file.write("\n".join(lines) + "\n")
+
+    return written, hashes_path
+
+
 def main():
     # Command-line options
     parser = argparse.ArgumentParser(
@@ -108,6 +162,8 @@ def main():
                         help="weather cache (default: data/raw/weather)")
     parser.add_argument("--out", default=OUT_PATH,
                         help="output CSV (default: data/processed/flood_data.csv)")
+    parser.add_argument("--splits", default=SPLITS_DIR,
+                        help="split index folder (default: results/splits)")
     args = parser.parse_args()
 
     with open(args.cells, "r", encoding="utf-8", newline="") as file:
@@ -173,6 +229,9 @@ def main():
         writer.writeheader()
         writer.writerows(rows)
 
+    # Freeze the split to row indices, with a hash of every file
+    written, hashes_path = write_splits(rows, args.out, args.splits)
+
     # Report the split sizes and the cluster spread for a quick check
     counts = {name: 0 for name in ("train", "val", "test")}
     flooded = {name: 0 for name in counts}
@@ -182,6 +241,7 @@ def main():
         flooded[row["split"]] += row["flooded"]
 
     print(f"Wrote {len(rows)} rows to {args.out}")
+    print(f"Wrote {len(written)} split files and {hashes_path}")
     print(f"{n_clusters} storm clusters")
 
     for name in ("train", "val", "test"):
