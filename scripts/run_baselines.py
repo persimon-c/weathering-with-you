@@ -39,7 +39,7 @@ RUN_COLUMNS = [
 
 
 
-def save_runs_csv(results, timings=None):
+def save_runs_csv(results):
     path = ROOT / "results" / "runs.csv"
     path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -77,7 +77,6 @@ def save_runs_csv(results, timings=None):
         for method, params in methods.items():
             metrics = results[method]["overall"]
             confusion = metrics["confusion_matrix"]
-            timing = (timings or {}).get(method, {})
 
             row = {
                 "timestamp_utc": timestamp,
@@ -89,8 +88,8 @@ def save_runs_csv(results, timings=None):
                 "hyperparameters": json.dumps(params, sort_keys=True),
                 "n_train": results["train_samples"],
                 "n_eval": results["validation_samples"],
-                "train_seconds": timing.get("train_seconds"),
-                "predict_seconds": timing.get("predict_seconds"),
+                "train_seconds": None,  # baselines are not timed
+                "predict_seconds": None,
             }
 
             for name in (
