@@ -96,13 +96,19 @@ def fetch_to_cache(lat, lon, start, end, cache_dir):
             print(f"    HTTP {error.code}")
             continue
 
-        except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
+        except (urllib.error.URLError, TimeoutError, ConnectionError, ValueError) as error:
             print(f"    network error: {error}")
             continue
 
-        # Keep the raw response, this is what "fetched once" means
-        with open(path, "w", encoding="utf-8") as file:
+        # Keep the raw response, this is what "fetched once" means. Write to a
+        # part file and rename it, so an interrupted run never leaves a half
+        # file that the next run would skip
+        part = path + ".part"
+
+        with open(part, "w", encoding="utf-8") as file:
             json.dump(data, file)
+
+        os.replace(part, path)
 
         return True
 
