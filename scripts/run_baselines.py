@@ -1,17 +1,17 @@
-
-import json
-import math
+# Usage (from the repository folder):
+# python scripts/run_baselines.py
 import sys
 from pathlib import Path
-from datetime import datetime, timezone
-import csv
-import subprocess
-import time
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.data import load_data, FEATURES
+import json
+from datetime import datetime, timezone
+import csv
+import subprocess
+
+from src.data import load_data
 from src.split import split_data
 from src.metrics import evaluate_by_cluster
 from src.baselines import (
@@ -40,7 +40,7 @@ RUN_COLUMNS = [
 
 
 def save_runs_csv(results, timings=None):
-    path = Path("results/runs.csv")
+    path = ROOT / "results" / "runs.csv"
     path.parent.mkdir(parents=True, exist_ok=True)
 
     timestamp = datetime.now(timezone.utc).strftime(
@@ -49,6 +49,7 @@ def save_runs_csv(results, timings=None):
 
     commit = subprocess.check_output(
         ["git", "rev-parse", "--short", "HEAD"],
+        cwd=ROOT,
         text=True,
     ).strip()
 
@@ -105,7 +106,9 @@ def save_runs_csv(results, timings=None):
 
 
 def main():
-    X, y, metadata = load_data()
+    X, y, metadata = load_data(
+        ROOT / "data" / "processed" / "flood_data.csv"
+    )
     splits = split_data(X, y, metadata)
 
     train = splits["train"]
@@ -149,18 +152,6 @@ def main():
         X_val, place_rates, overall_rate
     )
 
-    # Normalize rainfall scores using training-derived bounds.
-    rain_index = FEATURES.index("rain_3d")
-    
-    val_rain = [
-        row[rain_index] for row in X_val
-    ]
-
-    rain_scores = [
-        0.5 + math.atan(value) / math.pi
-         for value in val_rain
-        ]
-
     results = {
         "dataset": "2025 validation",
         "train_samples": len(y_train),
@@ -186,7 +177,7 @@ def main():
         ),
     }
 
-    output = Path("results/baselines_val.json")
+    output = ROOT / "results" / "baselines_val.json"
     output.parent.mkdir(parents=True, exist_ok=True)
 
     with output.open("w", encoding="utf-8") as file:
