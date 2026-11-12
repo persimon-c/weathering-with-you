@@ -196,6 +196,7 @@ class TestMetrics(unittest.TestCase):
                 [1, 1, 2]
             )
 
+
     def test_single_class_cluster(self):
         result = evaluate_by_cluster(
             [0, 0, 1, 1],
@@ -204,19 +205,14 @@ class TestMetrics(unittest.TestCase):
             [1, 1, 2, 2]
         )
 
-        self.assertIsNone(
-            result["clusters"][1]["roc_auc"]
-        )
-        self.assertIsNone(
-            result["clusters"][2]["roc_auc"]
-        )
+        for cluster_id in (1, 2):
+            scores = result["clusters"][cluster_id]
 
-        self.assertEqual(
-            result["clusters"][1]["accuracy"], 1.0
-        )
-        self.assertEqual(
-            result["clusters"][2]["accuracy"], 1.0
-        )
+            self.assertIsNone(scores["balanced_accuracy"])
+            self.assertIsNone(scores["macro_f1"])
+            self.assertIsNone(scores["roc_auc"])
+            self.assertEqual(scores["accuracy"], 1.0)
+
 
     def test_cluster_without_scores(self):
         result = evaluate_by_cluster(
@@ -245,6 +241,52 @@ class TestMetrics(unittest.TestCase):
         self.assertEqual(
             result["overall"]["accuracy"], 1.0
         )
+
+
+
+    def test_hand_checked_metrics(self):
+        y_true = [1, 1, 1, 0, 0]
+        y_pred = [1, 1, 0, 1, 0]
+
+        result = evaluate(y_true, y_pred)
+
+        # TP = 2, TN = 1, FP = 1, FN = 1
+        self.assertEqual(
+            result["confusion_matrix"],
+            {"tp": 2, "tn": 1, "fp": 1, "fn": 1}
+        )
+
+        self.assertAlmostEqual(result["accuracy"], 3 / 5)
+        self.assertAlmostEqual(result["precision"], 2 / 3)
+        self.assertAlmostEqual(result["recall"], 2 / 3)
+        self.assertAlmostEqual(result["f1"], 2 / 3)
+        self.assertAlmostEqual(result["balanced_accuracy"], 7 / 12)
+        self.assertAlmostEqual(result["macro_f1"], 7 / 12)
+
+    def test_hand_checked_auc(self):
+        y_true = [1, 1, 0, 0]
+        y_score = [0.9, 0.4, 0.6, 0.2]
+
+        # 3 correctly ordered positive-negative pairs out of 4.
+        self.assertAlmostEqual(
+            roc_auc(y_true, y_score),
+            0.75
+        )
+
+    
+    def test_unequal_precision_and_recall(self):
+        result = evaluate(
+            [1, 1, 1, 0, 0],
+            [1, 0, 0, 0, 0]
+        )
+
+        # TP=1, FN=2, FP=0, TN=2
+        self.assertAlmostEqual(result["precision"], 1.0)
+        self.assertAlmostEqual(result["recall"], 1 / 3)
+        self.assertAlmostEqual(result["balanced_accuracy"], 2 / 3)
+        self.assertAlmostEqual(result["f1"], 0.5)
+        self.assertAlmostEqual(result["macro_f1"], 7 / 12)
+    
 
 
 

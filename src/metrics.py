@@ -1,3 +1,5 @@
+import math
+
 
 def confusion_matrix(y_true, y_pred):
     if len(y_true) != len(y_pred):
@@ -34,8 +36,11 @@ def roc_auc(y_true, y_score):
     if any(label not in (0, 1) for label in y_true):
         raise ValueError("Labels must be 0 or 1.")
 
-    if any(not 0 <= score <= 1 for score in y_score):
-        raise ValueError("Scores must be between 0 and 1.")
+    if any(
+        not math.isfinite(score) or not 0 <= score <= 1
+        for score in y_score
+    ):
+        raise ValueError("Scores must be finite and between 0 and 1.")
 
     positives = sum(y_true)
     negatives = len(y_true) - positives
@@ -96,6 +101,11 @@ def evaluate(y_true, y_pred, y_score=None):
     )
 
     macro_f1 = (f1 + f1_0) / 2
+
+    # Two-class averages are undefined when only one class is present.
+    if tp + fn == 0 or tn + fp == 0:
+        balanced_accuracy = None
+        macro_f1 = None
 
     auc = None
     if y_score is not None:
