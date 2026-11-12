@@ -51,7 +51,7 @@ Built by joining `interim/flood_cells.csv` with the NASA POWER weather cache:
 python scripts/build_dataset.py
 ```
 
-It has 3,531 rows and 25 columns. Sources and license are the same as above. Built 2026-11-12. SHA-256: `5e07b160b8d093e982934fde908647b824ea744b90f63c4847497a9fe74556b9`.
+It has 3,531 rows and 25 columns. Sources and license are the same as above. Built 2026-11-12. Hashes are in `results/splits/sha256.txt`.
 
 | Column | Meaning |
 |---|---|
