@@ -26,15 +26,8 @@ from src.split import split_data
 from src.preprocess import preprocess_splits
 from src.metrics import evaluate
 
-try:
-    from src.models.naive_bayes import GaussianNaiveBayes
-except ImportError:
-    GaussianNaiveBayes = None
-
-try:
-    from src.models.logistic import LogisticRegression
-except ImportError:
-    LogisticRegression = None
+from src.models.naive_bayes import GaussianNaiveBayes
+from src.models.logistic import LogisticRegression
 
 
 RUNS_HEADER = [
@@ -204,38 +197,28 @@ def main():
 
     # 1. Gaussian Naive Bayes
     if args.model in ("all", "nb"):
-        if GaussianNaiveBayes is None:
-            if args.model == "nb":
-                print("ERROR: GaussianNaiveBayes is not imported.")
-                return 1
-        else:
-            hparams = {"var_floor": 1e-9}
-            nb = GaussianNaiveBayes(var_floor=hparams["var_floor"])
-            run_model_eval("naive_bayes", nb, hparams, args.seed,
-                           X_train_s, y_train, X_val_s, y_val, args.runs_csv)
+        hparams = {"var_floor": 1e-9}
+        nb = GaussianNaiveBayes(var_floor=hparams["var_floor"])
+        run_model_eval("naive_bayes", nb, hparams, args.seed,
+                       X_train_s, y_train, X_val_s, y_val, args.runs_csv)
 
     # 2. Logistic Regression
     if args.model in ("all", "logistic"):
-        if LogisticRegression is None:
-            if args.model == "logistic":
-                print("ERROR: LogisticRegression is not imported.")
-                return 1
-        else:
-            hparams = {
-                "lr": 0.1,
-                "epochs": 2000,
-                "reg": 0.01,
-                "class_weight": "balanced"
-            }
-            lr = LogisticRegression(
-                lr=hparams["lr"],
-                epochs=hparams["epochs"],
-                reg=hparams["reg"],
-                class_weight=hparams["class_weight"],
-                seed=args.seed
-            )
-            run_model_eval("logistic", lr, hparams, args.seed,
-                           X_train_s, y_train, X_val_s, y_val, args.runs_csv)
+        hparams = {
+            "lr": 0.1,
+            "epochs": 2000,
+            "reg": 0.01,
+            "class_weight": "balanced"
+        }
+        lr = LogisticRegression(
+            lr=hparams["lr"],
+            epochs=hparams["epochs"],
+            reg=hparams["reg"],
+            class_weight=hparams["class_weight"],
+            seed=args.seed
+        )
+        run_model_eval("logistic", lr, hparams, args.seed,
+                       X_train_s, y_train, X_val_s, y_val, args.runs_csv)
 
     print("\nCompleted.")
     return 0
