@@ -3,12 +3,13 @@ import json
 import math
 import sys
 from pathlib import Path
-
+from datetime import datetime, timezone
+import csv
+import subprocess
+import time
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-
-
 
 from src.data import load_data, FEATURES
 from src.split import split_data
@@ -23,6 +24,84 @@ from src.baselines import (
     place_history_scores,
     place_history_predict,
 )
+
+
+
+
+RUN_COLUMNS = [
+    "timestamp_utc", "run_id", "git_commit", "method",
+    "split", "seed", "hyperparameters", "n_train", "n_eval",
+    "accuracy", "balanced_accuracy", "precision", "recall",
+    "f1", "macro_f1", "roc_auc",
+    "tp", "tn", "fp", "fn",
+    "train_seconds", "predict_seconds",
+]
+
+
+
+def save_runs_csv(results, timings=None):
+    path = Path("results/runs.csv")
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    timestamp = datetime.now(timezone.utc).strftime(
+        "%Y%m%dT%H%M%S%fZ"
+    )
+
+    commit = subprocess.check_output(
+        ["git", "rev-parse", "--short", "HEAD"],
+        text=True,
+    ).strip()
+
+    methods = {
+        "majority": {},
+        "rainfall": {"cutoff": results["rain_cutoff"]},
+        "place_history": {"cutoff": 0.5},
+    }
+
+    file_exists = path.exists() and path.stat().st_size > 0
+
+    # Never append rows to a file with a different schema.
+    if file_exists:
+        with path.open("r", newline="", encoding="utf-8") as file:
+            header = next(csv.reader(file), [])
+        if header != RUN_COLUMNS:
+            raise ValueError("results/runs.csv has an incompatible header")
+
+    with path.open("a", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=RUN_COLUMNS)
+
+        if not file_exists:
+            writer.writeheader()
+
+        for method, params in methods.items():
+            metrics = results[method]["overall"]
+            confusion = metrics["confusion_matrix"]
+            timing = (timings or {}).get(method, {})
+
+            row = {
+                "timestamp_utc": timestamp,
+                "run_id": f"{method}_val_seed0_{timestamp}",
+                "git_commit": commit,
+                "method": method,
+                "split": "val",
+                "seed": 0,
+                "hyperparameters": json.dumps(params, sort_keys=True),
+                "n_train": results["train_samples"],
+                "n_eval": results["validation_samples"],
+                "train_seconds": timing.get("train_seconds"),
+                "predict_seconds": timing.get("predict_seconds"),
+            }
+
+            for name in (
+                "accuracy", "balanced_accuracy", "precision",
+                "recall", "f1", "macro_f1", "roc_auc"
+            ):
+                row[name] = metrics[name]
+
+            for name in ("tp", "tn", "fp", "fn"):
+                row[name] = confusion[name]
+
+            writer.writerow(row)
 
 
 def main():
@@ -126,7 +205,9 @@ def main():
         print(f"F1: {scores['f1']:.4f}")
         print(f"ROC AUC: {scores['roc_auc']:.4f}")
 
+    save_runs_csv(results)
     print(f"\nSaved results to {output}")
+    print("Saved experiment log to results/runs.csv")
 
 
 if __name__ == "__main__":
