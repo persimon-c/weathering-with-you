@@ -13,6 +13,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 
 import numpy as np
 
@@ -20,8 +21,9 @@ import numpy as np
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
-from src.data import load_data, FEATURES
+from src.data import load_data
 from src.split import split_data
+from src.preprocess import preprocess_splits
 from src.metrics import evaluate
 
 try:
@@ -56,6 +58,8 @@ RUNS_HEADER = [
     "tn",
     "fp",
     "fn",
+    "train_seconds",
+    "predict_seconds",
 ]
 
 
@@ -74,46 +78,12 @@ def get_git_commit():
 
 def prepare_data(data_path):
     """
-    Load dataset using src.data, split using src.split, handle missing
-    soil_wetness via training mean, and standardize features using
-    training statistics.
+    Load dataset using src.data, split using src.split, and apply
+    the shared preprocessing from src.preprocess (median fill + standardization).
     """
-    X, y, metadata = load_data(data_path)
-    splits = split_data(X, y, metadata)
-
-    soil_idx = FEATURES.index("soil_wetness")
-
-    # Compute training mean for soil_wetness (excluding None)
-    train_soil = [
-        row[soil_idx] for row in splits["train"]["X"]
-        if row[soil_idx] is not None
-    ]
-    soil_mean = float(np.mean(train_soil)) if train_soil else 0.0
-
-    def fill_and_to_array(rows):
-        filled = []
-        for row in rows:
-            row_copy = list(row)
-            if row_copy[soil_idx] is None:
-                row_copy[soil_idx] = soil_mean
-            filled.append(row_copy)
-        return np.array(filled, dtype=np.float64)
-
-    X_train = fill_and_to_array(splits["train"]["X"])
-    y_train = np.array(splits["train"]["y"], dtype=int)
-
-    X_val = fill_and_to_array(splits["val"]["X"])
-    y_val = np.array(splits["val"]["y"], dtype=int)
-
-    # Standardize using training statistics only
-    mu = X_train.mean(axis=0)
-    sigma = X_train.std(axis=0)
-    sigma[sigma == 0] = 1.0
-
-    X_train_s = (X_train - mu) / sigma
-    X_val_s = (X_val - mu) / sigma
-
-    return X_train_s, y_train, X_val_s, y_val
+    splits = split_data(*load_data(data_path))
+    p, _ = preprocess_splits(splits)
+    return p["train"]["X"], np.array(p["train"]["y"]), p["val"]["X"], np.array(p["val"]["y"])
 
 
 def append_run_to_csv(runs_csv_path, record):
@@ -146,10 +116,15 @@ def run_model_eval(method_name, model, hyperparameters, seed,
     commit = get_git_commit()
 
     print(f"\n=== {method_name} ===")
+    t0 = time.perf_counter()
     model.fit(X_train, y_train)
+    train_s = time.perf_counter() - t0
 
+    t0 = time.perf_counter()
     y_pred = model.predict(X_val)
     proba = model.predict_proba(X_val)
+    predict_s = time.perf_counter() - t0
+
     # Binary classification: positive class probability
     y_score = proba[:, 1] if proba.ndim == 2 and proba.shape[1] == 2 else proba
 
@@ -159,17 +134,15 @@ def run_model_eval(method_name, model, hyperparameters, seed,
     print(f"  accuracy:          {metrics['accuracy']:.4f}")
     if metrics["balanced_accuracy"] is not None:
         print(f"  balanced_accuracy: {metrics['balanced_accuracy']:.4f}")
-    if metrics["precision"] is not None:
-        print(f"  precision:         {metrics['precision']:.4f}")
-    if metrics["recall"] is not None:
-        print(f"  recall:            {metrics['recall']:.4f}")
-    if metrics["f1"] is not None:
-        print(f"  f1:                {metrics['f1']:.4f}")
+    print(f"  precision:         {metrics['precision']:.4f}")
+    print(f"  recall:            {metrics['recall']:.4f}")
+    print(f"  f1:                {metrics['f1']:.4f}")
     if metrics["macro_f1"] is not None:
         print(f"  macro_f1:          {metrics['macro_f1']:.4f}")
     if metrics["roc_auc"] is not None:
         print(f"  roc_auc:           {metrics['roc_auc']:.4f}")
     print(f"  confusion:         tp={cm['tp']} tn={cm['tn']} fp={cm['fp']} fn={cm['fn']}")
+    print(f"  timing:            fit={train_s:.4f}s, predict={predict_s:.4f}s")
 
     record = {
         "timestamp_utc": timestamp,
@@ -192,6 +165,8 @@ def run_model_eval(method_name, model, hyperparameters, seed,
         "tn": cm["tn"],
         "fp": cm["fp"],
         "fn": cm["fn"],
+        "train_seconds": train_s,
+        "predict_seconds": predict_s,
     }
 
     append_run_to_csv(out_csv, record)
@@ -221,10 +196,6 @@ def main():
         help="random seed"
     )
     args = parser.parse_args()
-
-    if not os.path.isfile(args.data):
-        print(f"ERROR: Dataset not found: {args.data}")
-        return 1
 
     print(f"Loading data from {args.data}...")
     X_train_s, y_train, X_val_s, y_val = prepare_data(args.data)
