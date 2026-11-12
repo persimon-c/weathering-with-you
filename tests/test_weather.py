@@ -5,12 +5,8 @@
 #   python -m unittest discover -s tests -t .
 
 import os
-import sys
 import tempfile
 import unittest
-
-# Tests run from the repository root, where src lives
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.weather import cache_path, cell_centers, load_cell, parse_cell
 
@@ -74,7 +70,7 @@ class CachePathTest(unittest.TestCase):
     # The file is named after the cell center
     def test_name(self):
         self.assertEqual(cache_path(7.75, 117.25, "/x/weather"),
-                         "/x/weather/7.75_117.25.json")
+                         os.path.join("/x/weather", "7.75_117.25.json"))
 
 
 class LoadCellTest(unittest.TestCase):
