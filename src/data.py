@@ -1,6 +1,7 @@
 
 import csv
 import os
+import math
 
 FEATURES = [
     "lat",
@@ -23,7 +24,11 @@ TARGET = "flooded"
 METADATA = ["event_id", "cluster_id", "split"]
 
 
-def load_data(path="data/processed/flood_data.csv"):
+def load_data(path="data/processed/flood_data.csv", flood_threshold=None):
+    
+    if flood_threshold is not None:
+        if not math.isfinite(flood_threshold) or flood_threshold < 0:
+            raise ValueError("Flood threshold must be finite and nonnegative.")
     if not os.path.isfile(path):
         raise FileNotFoundError(f"Dataset not found: {path}")
 
@@ -37,7 +42,8 @@ def load_data(path="data/processed/flood_data.csv"):
         if not reader.fieldnames:
             raise ValueError("CSV file is empty.")
 
-        required = FEATURES + [TARGET] + METADATA
+        label_column = TARGET if flood_threshold is None else "flood_share"
+        required = FEATURES + [label_column] + METADATA
         missing = [column for column in required
                    if column not in reader.fieldnames]
 
@@ -60,8 +66,17 @@ def load_data(path="data/processed/flood_data.csv"):
                     else:
                         features.append(float(value))
 
-                label = int(row[TARGET])
+                if flood_threshold is None:
+                    label = int(row[TARGET])
+                else:
+                    share = float(row["flood_share"])
 
+                    if not math.isfinite(share) or share < 0:
+                        raise ValueError(
+                            "Flood share must be finite and nonnegative."
+                        )
+
+                    label = int(share > flood_threshold)
                 if label not in (0, 1):
                     raise ValueError("Target must be 0 or 1.")
 
