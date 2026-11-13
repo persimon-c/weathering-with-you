@@ -169,6 +169,7 @@ def run_model_eval(method_name, model, hyperparameters, seed,
 
     append_run_to_csv(out_csv, record)
     print(f"  Appended run record to {out_csv}")
+    return metrics
 
 
 def main():
@@ -227,9 +228,12 @@ def main():
 
     # 3. K nearest neighbors, one validation row per k
     if args.model in ("all", "knn"):
-        for k in KNN_KS:
-            run_model_eval("knn", KNearestNeighbors(k=k), {"k": k}, args.seed,
-                           X_train_s, y_train, X_val_s, y_val, args.runs_csv)
+        scores = {k: run_model_eval("knn", KNearestNeighbors(k=k), {"k": k}, args.seed,
+                                    X_train_s, y_train, X_val_s, y_val, args.runs_csv)
+                  for k in KNN_KS}
+        best = max(KNN_KS, key=lambda k: scores[k]["balanced_accuracy"])
+        print(f"\nKNN: picked k={best}, best validation balanced accuracy "
+              f"{scores[best]['balanced_accuracy']:.4f}")
 
     print("\nCompleted.")
     return 0
