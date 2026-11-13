@@ -1,10 +1,11 @@
-# Train Gaussian Naive Bayes and Logistic Regression on the training split,
+# Train Gaussian Naive Bayes, Logistic Regression and KNN on the training split,
 # score on the 2025 validation split, and append results to results/runs.csv.
 #
 # Usage:
 #   python scripts/run_models.py                      # evaluates available models
 #   python scripts/run_models.py --model nb           # only Naive Bayes
 #   python scripts/run_models.py --model logistic     # only Logistic Regression
+#   python scripts/run_models.py --model knn          # only KNN, one row per k
 
 import argparse
 import csv
@@ -28,6 +29,10 @@ from src.metrics import evaluate
 
 from src.models.naive_bayes import GaussianNaiveBayes
 from src.models.logistic import LogisticRegression
+from src.models.knn import KNearestNeighbors
+
+# k is picked on 2025 validation from this list, never on 2026.
+KNN_KS = [5, 11, 21, 51]
 
 
 RUNS_HEADER = [
@@ -164,11 +169,12 @@ def run_model_eval(method_name, model, hyperparameters, seed,
 
     append_run_to_csv(out_csv, record)
     print(f"  Appended run record to {out_csv}")
+    return metrics
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Train NB and Logistic Regression on flood data."
+        description="Train NB, Logistic Regression and KNN on flood data."
     )
     parser.add_argument(
         "--data",
@@ -176,7 +182,7 @@ def main():
         help="path to processed flood_data.csv"
     )
     parser.add_argument(
-        "--model", choices=["all", "nb", "logistic"], default="all",
+        "--model", choices=["all", "nb", "logistic", "knn"], default="all",
         help="which model to evaluate (default: all available)"
     )
     parser.add_argument(
@@ -219,6 +225,15 @@ def main():
         )
         run_model_eval("logistic", lr, hparams, args.seed,
                        X_train_s, y_train, X_val_s, y_val, args.runs_csv)
+
+    # 3. K nearest neighbors, one validation row per k
+    if args.model in ("all", "knn"):
+        scores = {k: run_model_eval("knn", KNearestNeighbors(k=k), {"k": k}, args.seed,
+                                    X_train_s, y_train, X_val_s, y_val, args.runs_csv)
+                  for k in KNN_KS}
+        best = max(KNN_KS, key=lambda k: scores[k]["balanced_accuracy"])
+        print(f"\nKNN: picked k={best}, best validation balanced accuracy "
+              f"{scores[best]['balanced_accuracy']:.4f}")
 
     print("\nCompleted.")
     return 0

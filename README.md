@@ -43,7 +43,7 @@ The processed dataset, `data/processed/flood_data.csv`, is already in the reposi
    ```
    python scripts/run_baselines.py
    ```
-5. Train Gaussian Naive Bayes and logistic regression on 2022 to 2024, score them on 2025, and append one row per model to `results/runs.csv`:
+5. Train Gaussian Naive Bayes, logistic regression and K nearest neighbors on 2022 to 2024, score them on 2025, and append one row per model to `results/runs.csv`. KNN adds one row for each k in 5, 11, 21 and 51, and the script prints the k with the best validation balanced accuracy:
    ```
    python scripts/run_models.py
    ```
@@ -61,7 +61,7 @@ python -m unittest discover -s tests -t .
 | Path | Contents |
 |---|---|
 | `src/` | Shapefile reader, flooded area per tile, weather fetch, loader, split, preprocessing, metrics, baselines |
-| `src/models/` | Gaussian Naive Bayes and logistic regression |
+| `src/models/` | Gaussian Naive Bayes, logistic regression and K nearest neighbors |
 | `scripts/` | Download, dataset build, and the baseline and model runners |
 | `data/` | Acquisition list, interim and processed tables (`data/raw/` is not committed) |
 | `results/` | Frozen splits, `runs.csv` with one row per run, baseline per-cluster scores |
