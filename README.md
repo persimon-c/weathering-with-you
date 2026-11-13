@@ -64,6 +64,6 @@ python -m unittest discover -s tests -t .
 | `src/models/` | Gaussian Naive Bayes, logistic regression and K nearest neighbors |
 | `scripts/` | Download, dataset build, and the baseline and model runners |
 | `data/` | Acquisition list, interim and processed tables (`data/raw/` is not committed) |
-| `results/` | Frozen splits, `runs.csv` with one row per run, baseline per-cluster scores |
+| `results/` | Frozen splits, `runs.csv` with one row per run, baseline per-cluster scores, `hyperparameters.md` with the settings and seed of every method |
 | `tests/` | Unit tests |
 | `task-log.md` | Member contributions per milestone |
