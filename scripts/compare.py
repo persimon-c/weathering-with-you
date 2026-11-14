@@ -4,7 +4,7 @@
 # candidates and feature-group rows cannot change the table.
 #
 # Usage
-#   python scripts/compare.py --commit HEAD
+#   python scripts/compare.py --commit 3e8e3e5
 #   python scripts/compare.py --commit 40f2c29
 
 import argparse
@@ -272,8 +272,8 @@ def main():
     )
     parser.add_argument(
         "--commit",
-        default="HEAD",
-        help="source commit or HEAD (default: HEAD)",
+        required=True,
+        help="short commit hash whose runs to use (must exist in results/runs.csv)",
     )
     parser.add_argument(
         "--output-csv",

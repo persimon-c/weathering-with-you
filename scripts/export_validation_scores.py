@@ -34,7 +34,7 @@ from src.data import FEATURES, load_data
 from src.models.knn import KNearestNeighbors
 from src.models.logistic import LogisticRegression
 from src.models.naive_bayes import GaussianNaiveBayes
-from src.preprocess import preprocess_splits
+from src.preprocess import preprocess_splits, without_missing_flag
 from src.split import split_data
 
 
@@ -159,12 +159,12 @@ def build_predictions(data_path, seed=SEED):
     )
 
     # Learned methods use the shared training-only preprocessing.
-    # Naive Bayes excludes the 15th column (soil_wetness_missing indicator) so
-    # a near-zero-variance binary feature does not produce probability spikes.
+    # Naive Bayes excludes the soil_wetness_missing indicator via the shared
+    # without_missing_flag helper, which also validates the matrix shape.
     naive_bayes = GaussianNaiveBayes(var_floor=NB_VAR_FLOOR)
-    naive_bayes.fit(X_train[:, :-1], np.asarray(y_train))
-    naive_bayes_scores = naive_bayes.predict_proba(X_val[:, :-1])[:, 1]
-    naive_bayes_predictions = naive_bayes.predict(X_val[:, :-1])
+    naive_bayes.fit(without_missing_flag(X_train), np.asarray(y_train))
+    naive_bayes_scores = naive_bayes.predict_proba(without_missing_flag(X_val))[:, 1]
+    naive_bayes_predictions = naive_bayes.predict(without_missing_flag(X_val))
 
     logistic = LogisticRegression(
         lr=LOGISTIC_LR,
