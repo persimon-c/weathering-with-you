@@ -5,10 +5,11 @@ import os
 import tempfile
 import unittest
 from contextlib import redirect_stdout
+from unittest.mock import patch, call
 
 import numpy as np
 
-from scripts.run_feature_groups import run_feature_groups
+from scripts.run_feature_groups import run_feature_groups, FEATURE_GROUPS
 from src.feature_groups import (
     FEATURE_GROUPS,
     PREPROCESSED_FEATURES,
@@ -122,6 +123,57 @@ class TestFeatureGroups(unittest.TestCase):
                     "group",
                     json.loads(row["hyperparameters"])
                 )
+
+    def test_naive_bayes_does_not_see_missing_flag(self):
+        """NB must receive a matrix without soil_wetness_missing.
+
+        For groups that include the flag (place_weather, place_weather_season)
+        the column count passed to run_model_eval must be one less than the
+        group width. For the place group (no flag) the full 3-column matrix is
+        passed unchanged.
+        """
+        rng = np.random.default_rng(99)
+        X_train = rng.normal(size=(60, 15))
+        y_train = np.array([0, 1] * 30)
+        X_val = rng.normal(size=(20, 15))
+        y_val = np.array([0, 1] * 10)
+
+        observed_nb_train_cols = {}
+
+        import scripts.run_feature_groups as rfg_module
+        original_run_model_eval = rfg_module.run_model_eval
+
+        def capturing_run_model_eval(method_name, model, hparams, seed,
+                                     X_tr, y_tr, X_v, y_v, runs_csv):
+            if method_name == "naive_bayes":
+                group = hparams.get("group", "?")
+                observed_nb_train_cols[group] = X_tr.shape[1]
+            return original_run_model_eval(
+                method_name, model, hparams, seed,
+                X_tr, y_tr, X_v, y_v, runs_csv,
+            )
+
+        from unittest.mock import patch
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            runs_csv = os.path.join(temp_dir, "runs.csv")
+            output_csv = os.path.join(temp_dir, "feature_groups.csv")
+
+            with patch(
+                "scripts.run_feature_groups.run_model_eval",
+                side_effect=capturing_run_model_eval,
+            ), redirect_stdout(io.StringIO()):
+                run_feature_groups(
+                    X_train, y_train, X_val, y_val,
+                    runs_csv, output_csv, seed=42,
+                )
+
+        # place: 3 cols, no flag — NB sees full group
+        self.assertEqual(observed_nb_train_cols["place"], 3)
+        # place_weather: 13 cols including flag — NB sees 12
+        self.assertEqual(observed_nb_train_cols["place_weather"], 12)
+        # place_weather_season: 15 cols including flag — NB sees 14
+        self.assertEqual(observed_nb_train_cols["place_weather_season"], 14)
 
 
 if __name__ == "__main__":

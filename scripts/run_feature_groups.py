@@ -111,14 +111,30 @@ def run_feature_groups(X_train, y_train, X_val, y_val,
             run_hyperparameters = dict(hyperparameters)
             run_hyperparameters["group"] = group
 
+            # Naive Bayes must not see the binary soil_wetness_missing
+            # indicator. In the flooded class the flag is almost always 0
+            # (ocean points are not flooded), giving it near-zero variance.
+            # With var_floor=1e-9 this produces massive positive log-odds for
+            # every non-ocean row, inflating balanced accuracy by ~7 points
+            # and falsely crediting weather features for the gain.
+            # Strip the last column of any group that includes the flag;
+            # the flag is always appended last in feature_groups.py.
+            if method_name == "naive_bayes" and \
+                    "soil_wetness_missing" in FEATURE_GROUPS[group]:
+                X_train_model = X_train_group[:, :-1]
+                X_val_model = X_val_group[:, :-1]
+            else:
+                X_train_model = X_train_group
+                X_val_model = X_val_group
+
             metrics = run_model_eval(
                 method_name,
                 model,
                 run_hyperparameters,
                 seed,
-                X_train_group,
+                X_train_model,
                 y_train,
-                X_val_group,
+                X_val_model,
                 y_val,
                 runs_csv,
             )

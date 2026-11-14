@@ -2,9 +2,9 @@ method,group,balanced_accuracy,macro_f1,roc_auc
 naive_bayes,place,0.514325,0.493558,0.648147
 logistic,place,0.595522,0.562646,0.649304
 knn,place,0.795238,0.790954,0.910221
-naive_bayes,place_weather,0.607633,0.587596,0.676465
+naive_bayes,place_weather,0.536013,0.537901,0.686962
 logistic,place_weather,0.667927,0.623183,0.721005
 knn,place_weather,0.598452,0.614819,0.686583
-naive_bayes,place_weather_season,0.605934,0.588164,0.675930
+naive_bayes,place_weather_season,0.540372,0.542844,0.686590
 logistic,place_weather_season,0.707611,0.652748,0.752382
 knn,place_weather_season,0.567485,0.576422,0.706556
