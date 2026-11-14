@@ -9,16 +9,8 @@ sys.path.insert(0, str(ROOT))
 
 from src.data import load_data
 from src.split import split_data
-from src.preprocess import fit_preprocess, transform_preprocess
 from src.metrics import evaluate_by_cluster
-from src.baselines import (
-    majority_predict, majority_predict_proba, choose_rain_cutoff,
-    rain_predict, rain_predict_proba, fit_place_history,
-    place_history_predict, place_history_scores,
-)
-from src.models.naive_bayes import GaussianNaiveBayes
-from src.models.logistic import LogisticRegression
-from src.models.knn import KNearestNeighbors
+from src.experiments import predict_methods
 
 METRICS = (
     "accuracy", "balanced_accuracy", "macro_f1", "precision",
@@ -31,45 +23,8 @@ FIELDS = [
 
 
 def validation_predictions(train, val, seed=42):
-    """Fit on training rows and retain predictions for later error analysis."""
-    raw_train, raw_val = train["X"], val["X"]
-    y_train = train["y"]
-    if not raw_train or not raw_val:
-        raise ValueError("Training and validation splits must contain samples.")
-
-    params = fit_preprocess(raw_train)
-    X_train = transform_preprocess(raw_train, params)
-    X_val = transform_preprocess(raw_val, params)
-
-    prevalence = sum(y_train) / len(y_train)
-    majority = int(prevalence > 0.5)
-    cutoff = choose_rain_cutoff(raw_train, y_train)
-    rates, overall = fit_place_history(raw_train, y_train)
-    results = [
-        ("majority", 0, {"class": majority},
-         majority_predict(raw_val, majority),
-         majority_predict_proba(raw_val, prevalence)),
-        ("rainfall", 0, {"cutoff": cutoff},
-         rain_predict(raw_val, cutoff), rain_predict_proba(raw_val)),
-        ("place_history", 0, {"cutoff": 0.5},
-         place_history_predict(raw_val, rates, overall),
-         place_history_scores(raw_val, rates, overall)),
-    ]
-    models = [
-        ("naive_bayes", GaussianNaiveBayes(var_floor=1e-9),
-         {"var_floor": 1e-9}),
-        ("logistic", LogisticRegression(
-            lr=0.1, epochs=2000, reg=0.01,
-            class_weight="balanced", seed=seed),
-         {"lr": 0.1, "epochs": 2000, "reg": 0.01,
-          "class_weight": "balanced"}),
-        ("knn", KNearestNeighbors(k=5), {"k": 5}),
-    ]
-    for name, model, settings in models:
-        model.fit(X_train, y_train)
-        results.append((name, seed, settings, list(model.predict(X_val)),
-                        list(model.predict_proba(X_val)[:, 1])))
-    return results
+    # Same six methods and settings as every other runner, see src/experiments.py
+    return predict_methods(train, val, seed=seed)
 
 
 def run_per_cluster(data_path, output, seed=42):

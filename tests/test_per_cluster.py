@@ -44,7 +44,7 @@ class TestPerCluster(unittest.TestCase):
 
             with patch("scripts.run_per_cluster.evaluate_by_cluster",
                        wraps=evaluate_by_cluster) as evaluate_mock, patch(
-                           "scripts.run_per_cluster.transform_preprocess",
+                           "src.experiments.transform_preprocess",
                            wraps=transform_preprocess) as transform_mock:
                 rows = run_per_cluster(data, output)
             self.assertEqual(evaluate_mock.call_count, 6)
