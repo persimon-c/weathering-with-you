@@ -7,7 +7,8 @@ from src.data import FEATURES
 from src.preprocess import (
     fit_preprocess,
     transform_preprocess,
-    preprocess_splits
+    preprocess_splits,
+    without_missing_flag
 )
 
 
@@ -156,3 +157,15 @@ class TestPreprocess(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class WithoutMissingFlagTest(unittest.TestCase):
+    # Only the appended flag is dropped, the 14 features stay in order
+    def test_drops_last_column(self):
+        X = np.arange(30, dtype=float).reshape(2, 15)
+        np.testing.assert_array_equal(without_missing_flag(X), X[:, :14])
+
+    # A feature-group subset is refused, so it cannot lose a real feature
+    def test_rejects_subset(self):
+        with self.assertRaises(ValueError):
+            without_missing_flag(np.zeros((2, 3)))
