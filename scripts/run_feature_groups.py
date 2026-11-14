@@ -79,7 +79,11 @@ def write_table(rows, output_csv):
         os.makedirs(output_dir, exist_ok=True)
 
     with open(output_csv, "w", encoding="utf-8", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=TABLE_COLUMNS)
+        writer = csv.DictWriter(
+            file,
+            fieldnames=TABLE_COLUMNS,
+            lineterminator="\n",
+        )
         writer.writeheader()
 
         for row in rows:
