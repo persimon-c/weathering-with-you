@@ -91,3 +91,13 @@ def preprocess_splits(splits):
         }
 
     return processed, params
+
+
+# Features without the soil_wetness_missing flag, which transform_preprocess
+# appends last. Naive Bayes uses this: the 0/1 flag can have almost no spread
+# in one class, and its bell curve then outweighs every other feature
+def without_missing_flag(X):
+    if X.ndim != 2 or X.shape[1] != len(FEATURES) + 1:
+        raise ValueError("Expected the full preprocessed matrix with the flag last.")
+
+    return X[:, :-1]
