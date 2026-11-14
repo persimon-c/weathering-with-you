@@ -9,7 +9,11 @@ sys.path.insert(0, str(ROOT))
 
 from src.data import load_data
 from src.split import split_data
-from src.preprocess import fit_preprocess, transform_preprocess
+from src.preprocess import (
+    fit_preprocess,
+    transform_preprocess,
+    without_missing_flag,
+)
 from src.metrics import evaluate
 from src.baselines import (
     majority_predict, majority_predict_proba, choose_rain_cutoff,
@@ -47,16 +51,27 @@ def evaluate_threshold(splits, X_train, X_val, seed):
          place_history_scores(raw_val, rates, overall)),
     ]
     models = [
-        ("naive_bayes", GaussianNaiveBayes(var_floor=1e-9), {"var_floor": 1e-9}),
-        ("logistic", LogisticRegression(lr=0.1, epochs=2000, reg=0.01,
-                                        class_weight="balanced", seed=seed),
+        ("naive_bayes", GaussianNaiveBayes(var_floor=1e-9), {"var_floor": 1e-9, "missing_flag": False}),
+        ("logistic", LogisticRegression(lr=0.1, epochs=2000, reg=0.01, class_weight="balanced", seed=seed),
          {"lr": 0.1, "epochs": 2000, "reg": 0.01, "class_weight": "balanced"}),
         ("knn", KNearestNeighbors(k=5), {"k": 5}),
     ]
     for name, model, params in models:
-        model.fit(X_train, y_train)
-        results.append((name, params, model.predict(X_val),
-                        model.predict_proba(X_val)[:, 1]))
+        if name == "naive_bayes":
+            model_train = without_missing_flag(X_train)
+            model_val = without_missing_flag(X_val)
+        else:
+            model_train = X_train
+            model_val = X_val
+
+        model.fit(model_train, y_train)
+
+        results.append((
+            name,
+            params,
+            model.predict(model_val),
+            model.predict_proba(model_val)[:, 1],
+        ))
 
     rows = []
     for name, params, predictions, scores in results:

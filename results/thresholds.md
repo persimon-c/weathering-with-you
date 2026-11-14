@@ -37,9 +37,10 @@ All thresholds use the same features, rows, and frozen splits:
 - Test: 2026.
 
 Preprocessing is fitted once on training features and reused
-across all thresholds for Naive Bayes, logistic regression,
-and KNN. It uses the existing median imputation,
-standardization, and missing-soil indicator.
+across all thresholds. It uses median imputation and
+standardization. Logistic regression and KNN retain the
+missing-soil indicator. Gaussian Naive Bayes excludes that
+indicator and uses the 14 original features after preprocessing.
 
 Baselines use raw features, following the existing baseline
 runner.
@@ -57,7 +58,8 @@ remain reserved for Milestone 4.
 - Place history: calculate training flood rates per cell,
   using the overall training rate for unseen cells.
   Classification cutoff: 0.5.
-- Gaussian Naive Bayes: variance floor of 1e-9.
+- Gaussian Naive Bayes: variance floor of 1e-9; excludes the
+  binary missing-soil indicator (`missing_flag: false`).
 - Logistic regression: learning rate 0.1, 2000 epochs,
   L2 regularization 0.01, balanced class weights,
   seed 42, and classification cutoff 0.5.
@@ -102,5 +104,17 @@ produces the highest score. The main threshold remains 1%.
 
 ## Validation
 
-All 101 tests passed. The output contains six methods at each
+All 131 tests passed. The output contains six methods at each
 of 0.5%, 1%, and 2%, for 18 rows total.
+
+After excluding the missing-soil indicator, Naive Bayes gives:
+
+| Label threshold | Accuracy | Balanced accuracy | Predicted flooded |
+|---|---:|---:|---:|
+| 0.5% | 0.6829 | 0.5681 | 174 |
+| 1% | 0.7497 | 0.5404 | 139 |
+| 2% | 0.8197 | 0.5136 | 103 |
+
+These replace the previous Naive Bayes results, which were
+distorted by near-zero within-class variance in the binary
+missing-soil indicator.
