@@ -25,11 +25,11 @@ and evaluation remain reserved for Milestone 4.
 | File | Contents |
 |---|---|
 | `tables/per_cluster.csv` | 30 rows: six methods on five validation storm clusters, including metrics, confusion counts, sample sizes, and settings |
-| `tables/validation_errors.csv` | 1,452 incorrect method-row predictions, including coordinates, elevation, rainfall, and error type |
+| `tables/validation_errors.csv` | 1,416 incorrect method-row predictions, including coordinates, elevation, rainfall, and error type |
 | `tables/error_groups.csv` | 1,368 summaries by method and cluster, cell, elevation range, or rainfall range |
 
 An observation can be misclassified by several methods.
-Therefore, 1,452 error rows do not mean 1,452 distinct
+Therefore, 1,416 error rows do not mean 1,416 distinct
 dataset observations.
 
 Each validation row belongs to one group within each
@@ -77,7 +77,7 @@ The validation split contains 987 rows:
 | Majority | 184 | 0 |
 | Rainfall | 112 | 300 |
 | Place history | 68 | 54 |
-| Naive Bayes | 104 | 179 |
+| Naive Bayes | 146 | 101 |
 | Logistic regression | 62 | 199 |
 | KNN | 150 | 40 |
 
@@ -88,7 +88,7 @@ Balanced accuracy by storm cluster:
 | Majority | 0.5000 | 0.5000 | 0.5000 | 0.5000 | 0.5000 |
 | Rainfall | 0.5000 | 0.5071 | 0.5252 | 0.5003 | 0.4255 |
 | Place history | 0.8750 | 0.8088 | 0.7424 | 0.8838 | 0.8208 |
-| Naive Bayes | 0.5000 | 0.5863 | 0.6023 | 0.6477 | 0.6180 |
+| Naive Bayes | 0.3750 | 0.4943 | 0.5497 | 0.5492 | 0.5423 |
 | Logistic regression | 0.5000 | 0.7064 | 0.6414 | 0.7711 | 0.6779 |
 | KNN | 0.5000 | 0.6015 | 0.5446 | 0.4871 | 0.5882 |
 
@@ -120,16 +120,15 @@ clusters 14–18, respectively.
    At center (8.25, 123.25), place history, Naive Bayes, and
    KNN each miss six floods across seven validation rows;
    logistic regression misses five. At (10.25, 123.25),
-   Naive Bayes produces nine false alarms across nine rows,
-   and logistic regression produces eight. These shared
+   logistic regression produces eight false alarms across
+   nine rows, and Naive Bayes produces four. These shared
    locations show repeated spatial errors without establishing
    a regional cause.
 
 5. **Naive Bayes shows an elevation-associated error pattern.**
-   At elevations of at least 500 m, it predicts all 69 rows
-   as flooded. It detects all 25 positives but falsely flags
-   all 44 negatives, giving 100% FPR. Below 100 m, it misses
-   40/46 positives, giving 87.0% FNR.
+   At elevations of at least 500 m, it detects 18/25 positives
+   but falsely flags 37/44 negatives, giving 84.1% FPR.
+   Below 100 m, it misses 42/46 positives, giving 91.3% FNR.
 
 6. **Logistic regression shows a similar elevation tradeoff.**
    Below 100 m, it misses 37/46 positives (80.4% FNR).
