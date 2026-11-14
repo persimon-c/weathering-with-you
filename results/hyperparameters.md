@@ -23,3 +23,15 @@ The baselines use the raw features, so the rain cutoff is in millimeters.
 | K nearest neighbors | `knn` | `k` 5, Euclidean distance, flooded when at least half of the neighbors flooded | k = 5 has the best validation balanced accuracy out of 5, 11, 21 and 51. All four are in `runs.csv` | 42, unused: no randomness. Distance ties go to the earlier training row |
 
 The decision thresholds of logistic regression and KNN are not in the `hyperparameters` column because they are the 0.5 default. Tuning each method and its threshold on validation is planned for Milestone 4.
+
+## Feature-group experiment
+
+`scripts/run_feature_groups.py` reuses the same training and validation split and the same training-only preprocessing. The feature groups are selected after preprocessing, from the 15-column processed matrix, so `soil_wetness_missing` is available. All nine rows use the settings above, seed 42, and the 2025 validation split. The `group` name is stored in each row's `hyperparameters` JSON, and the compact summary is in [`tables/feature_groups.csv`](tables/feature_groups.csv).
+
+| Group | Columns | Count |
+|---|---|---|
+| `place` | `lat`, `lon`, `elevation` | 3 |
+| `place_weather` | place, the six rain windows, `humidity`, `temperature`, `soil_wetness`, and `soil_wetness_missing` | 13 |
+| `place_weather_season` | every processed column, including `month_sin` and `month_cos` | 15 |
+
+`place_weather_season` has the same columns as the main model rows, so its validation scores reproduce the main rows. The 2026 test set is not used.
