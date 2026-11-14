@@ -111,6 +111,10 @@ def run_feature_groups(X_train, y_train, X_val, y_val,
             run_hyperparameters = dict(hyperparameters)
             run_hyperparameters["group"] = group
 
+            # Logged as in run_models.py, so these rows differ from the old flagged ones
+            if method_name == "naive_bayes":
+                run_hyperparameters["missing_flag"] = False
+
             # Naive Bayes must not see the binary soil_wetness_missing
             # indicator. In the flooded class the flag is almost always 0
             # (ocean points are not flooded), giving it near-zero variance.
