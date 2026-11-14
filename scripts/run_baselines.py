@@ -122,6 +122,7 @@ def main():
         "dataset": "2025 validation",
         "train_samples": len(y_train),
         "validation_samples": len(y_val),
+        "rain_cutoff": None,
     }
 
     for name, _, settings, predicted, scores in predictions:
