@@ -90,7 +90,7 @@ def append_run_to_csv(runs_csv_path, record):
     file_exists = os.path.isfile(runs_csv_path)
 
     with open(runs_csv_path, "a", encoding="utf-8", newline="") as f:
-        writer = csv.writer(f)
+        writer = csv.writer(f, lineterminator="\n")
         if not file_exists:
             writer.writerow(RUNS_HEADER)
 
