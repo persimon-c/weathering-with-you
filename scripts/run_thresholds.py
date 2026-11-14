@@ -9,20 +9,9 @@ sys.path.insert(0, str(ROOT))
 
 from src.data import load_data
 from src.split import split_data
-from src.preprocess import (
-    fit_preprocess,
-    transform_preprocess,
-    without_missing_flag,
-)
+from src.preprocess import fit_preprocess, transform_preprocess
 from src.metrics import evaluate
-from src.baselines import (
-    majority_predict, majority_predict_proba, choose_rain_cutoff,
-    rain_predict, rain_predict_proba, fit_place_history,
-    place_history_predict, place_history_scores,
-)
-from src.models.naive_bayes import GaussianNaiveBayes
-from src.models.logistic import LogisticRegression
-from src.models.knn import KNearestNeighbors
+from src.experiments import predict_methods
 
 THRESHOLDS = (0.5, 1.0, 2.0)
 METRICS = ("accuracy", "balanced_accuracy", "macro_f1", "precision", "recall", "f1", "roc_auc")
@@ -33,56 +22,36 @@ FIELDS += list(METRICS) + ["tp", "tn", "fp", "fn"]
 
 
 def evaluate_threshold(splits, X_train, X_val, seed):
-    """Fit all six methods on this threshold's training labels; score val."""
-    train, val = splits["train"], splits["val"]
-    y_train, y_val = train["y"], val["y"]
-    raw_train, raw_val = train["X"], val["X"]
-    prevalence = sum(y_train) / len(y_train)
-    cutoff = choose_rain_cutoff(raw_train, y_train)
-    rates, overall = fit_place_history(raw_train, y_train)
-    results = [
-        ("majority", {"class": int(prevalence > 0.5)},
-         majority_predict(raw_val, int(prevalence > 0.5)),
-         majority_predict_proba(raw_val, prevalence)),
-        ("rainfall", {"cutoff": cutoff}, rain_predict(raw_val, cutoff),
-         rain_predict_proba(raw_val)),
-        ("place_history", {"cutoff": 0.5},
-         place_history_predict(raw_val, rates, overall),
-         place_history_scores(raw_val, rates, overall)),
-    ]
-    models = [
-        ("naive_bayes", GaussianNaiveBayes(var_floor=1e-9), {"var_floor": 1e-9, "missing_flag": False}),
-        ("logistic", LogisticRegression(lr=0.1, epochs=2000, reg=0.01, class_weight="balanced", seed=seed),
-         {"lr": 0.1, "epochs": 2000, "reg": 0.01, "class_weight": "balanced"}),
-        ("knn", KNearestNeighbors(k=5), {"k": 5}),
-    ]
-    for name, model, params in models:
-        if name == "naive_bayes":
-            model_train = without_missing_flag(X_train)
-            model_val = without_missing_flag(X_val)
-        else:
-            model_train = X_train
-            model_val = X_val
+    """Fit all six methods and score this threshold's validation labels."""
+    y_val = splits["val"]["y"]
 
-        model.fit(model_train, y_train)
-
-        results.append((
-            name,
-            params,
-            model.predict(model_val),
-            model.predict_proba(model_val)[:, 1],
-        ))
+    results = predict_methods(
+        splits["train"],
+        splits["val"],
+        seed=seed,
+        prepared=(X_train, X_val),
+    )
 
     rows = []
-    for name, params, predictions, scores in results:
-        metrics = evaluate(y_val, list(predictions), list(scores))
+
+    for name, method_seed, params, predictions, scores in results:
+        metrics = evaluate(
+            y_val,
+            list(predictions),
+            list(scores),
+        )
+
         rows.append({
-            "method": name, "split": "val",
-            "seed": seed if name in ("naive_bayes", "logistic", "knn") else 0,
-            "hyperparameters": json.dumps(params, sort_keys=True),
+            "method": name,
+            "split": "val",
+            "seed": method_seed,
+            "hyperparameters": json.dumps(
+                params, sort_keys=True
+            ),
             **{key: metrics[key] for key in METRICS},
             **metrics["confusion_matrix"],
         })
+
     return rows
 
 

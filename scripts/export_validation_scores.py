@@ -15,37 +15,13 @@ import math
 from pathlib import Path
 import sys
 
-import numpy as np
-
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.baselines import (
-    choose_rain_cutoff,
-    fit_place_history,
-    majority_predict,
-    majority_predict_proba,
-    place_history_predict,
-    place_history_scores,
-    rain_predict,
-    rain_predict_proba,
-)
 from src.data import FEATURES, load_data
-from src.models.knn import KNearestNeighbors
-from src.models.logistic import LogisticRegression
-from src.models.naive_bayes import GaussianNaiveBayes
-from src.preprocess import preprocess_splits, without_missing_flag
 from src.split import split_data
+from src.experiments import METHODS, predict_methods
 
-
-METHODS = (
-    "majority",
-    "rainfall",
-    "place_history",
-    "naive_bayes",
-    "logistic",
-    "knn",
-)
 
 SCORE_COLUMNS = [
     "method",
@@ -59,11 +35,7 @@ SCORE_COLUMNS = [
 ]
 
 SEED = 42
-NB_VAR_FLOOR = 1e-9
-LOGISTIC_LR = 0.1
-LOGISTIC_EPOCHS = 2000
-LOGISTIC_REG = 0.01
-KNN_K = 5  # the setting selected on 2025 validation in #22
+
 
 
 def validate_predictions(y_true, scores, predictions):
@@ -125,73 +97,27 @@ def write_validation_scores(path, y_true, metadata, X_raw, method_predictions):
 
 
 def build_predictions(data_path, seed=SEED):
-    """Train all six main methods and return their validation predictions."""
-    X, y, metadata = load_data(data_path)
-    splits = split_data(X, y, metadata)
-    processed, _ = preprocess_splits(splits)
-
-    train = splits["train"]
+    """Train all six methods and return validation predictions."""
+    splits = split_data(*load_data(data_path))
     val = splits["val"]
 
-    y_train = train["y"]
-    y_val = val["y"]
-    X_train_raw = train["X"]
-    X_val_raw = val["X"]
-
-    X_train = processed["train"]["X"]
-    X_val = processed["val"]["X"]
-
-    # Baselines use the raw features, the same as scripts/run_baselines.py.
-    majority_class = int(sum(y_train) > len(y_train) / 2)
-    prevalence = sum(y_train) / len(y_train)
-
-    majority_scores = majority_predict_proba(X_val_raw, prevalence)
-    majority_predictions = majority_predict(X_val_raw, majority_class)
-
-    cutoff = choose_rain_cutoff(X_train_raw, y_train)
-    rain_scores = rain_predict_proba(X_val_raw)
-    rain_predictions = rain_predict(X_val_raw, cutoff)
-
-    place_rates, overall_rate = fit_place_history(X_train_raw, y_train)
-    place_scores = place_history_scores(X_val_raw, place_rates, overall_rate)
-    place_predictions = place_history_predict(
-        X_val_raw, place_rates, overall_rate
-    )
-
-    # Learned methods use the shared training-only preprocessing.
-    # Naive Bayes excludes the soil_wetness_missing indicator via the shared
-    # without_missing_flag helper, which also validates the matrix shape.
-    naive_bayes = GaussianNaiveBayes(var_floor=NB_VAR_FLOOR)
-    naive_bayes.fit(without_missing_flag(X_train), np.asarray(y_train))
-    naive_bayes_scores = naive_bayes.predict_proba(without_missing_flag(X_val))[:, 1]
-    naive_bayes_predictions = naive_bayes.predict(without_missing_flag(X_val))
-
-    logistic = LogisticRegression(
-        lr=LOGISTIC_LR,
-        epochs=LOGISTIC_EPOCHS,
-        reg=LOGISTIC_REG,
-        class_weight="balanced",
+    results = predict_methods(
+        splits["train"],
+        val,
         seed=seed,
     )
-    logistic.fit(X_train, np.asarray(y_train))
-    logistic_scores = logistic.predict_proba(X_val)[:, 1]
-    logistic_predictions = logistic.predict(X_val)
-
-    knn = KNearestNeighbors(k=KNN_K)
-    knn.fit(X_train, np.asarray(y_train))
-    knn_scores = knn.predict_proba(X_val)[:, 1]
-    knn_predictions = knn.predict(X_val)
 
     method_predictions = [
-        ("majority", majority_scores, majority_predictions),
-        ("rainfall", rain_scores, rain_predictions),
-        ("place_history", place_scores, place_predictions),
-        ("naive_bayes", naive_bayes_scores.tolist(), naive_bayes_predictions.tolist()),
-        ("logistic", logistic_scores.tolist(), logistic_predictions.tolist()),
-        ("knn", knn_scores.tolist(), knn_predictions.tolist()),
+        (name, scores, predicted)
+        for name, _, _, predicted, scores in results
     ]
 
-    return y_val, val["metadata"], X_val_raw, method_predictions
+    return (
+        val["y"],
+        val["metadata"],
+        val["X"],
+        method_predictions,
+    )
 
 
 def main():

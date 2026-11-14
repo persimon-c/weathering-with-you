@@ -24,15 +24,16 @@ sys.path.insert(0, ROOT)
 
 from src.data import load_data
 from src.split import split_data
-from src.preprocess import preprocess_splits, without_missing_flag
+from src.preprocess import preprocess_splits
 from src.metrics import evaluate
 
-from src.models.naive_bayes import GaussianNaiveBayes
-from src.models.logistic import LogisticRegression
-from src.models.knn import KNearestNeighbors
-
-# k is picked on 2025 validation from this list, never on 2026.
-KNN_KS = [5, 11, 21, 51]
+from src.experiments import (
+    build_model,
+    model_features,
+    MODEL_METHODS,
+    KNN_KS,
+    DEFAULT_K,
+)
 
 
 RUNS_HEADER = [
@@ -205,43 +206,55 @@ def main():
     print(f"  Train: {len(y_train)} rows ({100 * y_train.mean():.1f}% flooded)")
     print(f"  Val:   {len(y_val)} rows ({100 * y_val.mean():.1f}% flooded)")
 
-    # 1. Gaussian Naive Bayes
-    if args.model in ("all", "nb"):
-        # Naive Bayes skips the 0/1 missing-soil flag, see without_missing_flag
-        hparams = {"var_floor": 1e-9, "missing_flag": False}
-        nb = GaussianNaiveBayes(var_floor=hparams["var_floor"])
-        run_model_eval("naive_bayes", nb, hparams, args.seed,
-                       without_missing_flag(X_train_s), y_train,
-                       without_missing_flag(X_val_s), y_val, args.runs_csv)
+    requested = {
+        "nb": "naive_bayes",
+        "logistic": "logistic",
+        "knn": "knn",
+    }
 
-    # 2. Logistic Regression
-    if args.model in ("all", "logistic"):
-        hparams = {
-            "lr": 0.1,
-            "epochs": 2000,
-            "reg": 0.01,
-            "class_weight": "balanced"
-        }
-        lr = LogisticRegression(
-            lr=hparams["lr"],
-            epochs=hparams["epochs"],
-            reg=hparams["reg"],
-            class_weight=hparams["class_weight"],
-            seed=args.seed
-        )
-        run_model_eval("logistic", lr, hparams, args.seed,
-                       X_train_s, y_train, X_val_s, y_val, args.runs_csv)
+    if args.model == "all":
+        methods = MODEL_METHODS
+    else:
+        methods = (requested[args.model],)
 
-    # 3. K nearest neighbors, one validation row per k
-    if args.model in ("all", "knn"):
-        target_ks = [args.k] if args.k is not None else KNN_KS
-        scores = {k: run_model_eval("knn", KNearestNeighbors(k=k), {"k": k}, args.seed,
-                                    X_train_s, y_train, X_val_s, y_val, args.runs_csv)
-                  for k in target_ks}
-        if len(target_ks) > 1:
-            best = max(target_ks, key=lambda k: scores[k]["balanced_accuracy"])
-            print(f"\nKNN: picked k={best}, best validation balanced accuracy "
-                  f"{scores[best]['balanced_accuracy']:.4f}")
+    for name in methods:
+        if name == "knn":
+            target_ks = [args.k] if args.k is not None else KNN_KS
+        else:
+            target_ks = [DEFAULT_K]
+
+        scores = {}
+
+        for k in target_ks:
+            model, settings = build_model(
+                name,
+                seed=args.seed,
+                k=k,
+            )
+
+            scores[k] = run_model_eval(
+                name,
+                model,
+                settings,
+                args.seed,
+                model_features(name, X_train_s),
+                y_train,
+                model_features(name, X_val_s),
+                y_val,
+                args.runs_csv,
+            )
+
+        if name == "knn" and len(target_ks) > 1:
+            best = max(
+                target_ks,
+                key=lambda k: scores[k]["balanced_accuracy"],
+            )
+
+            print(
+                f"\nKNN: picked k={best}, "
+                f"best validation balanced accuracy "
+                f"{scores[best]['balanced_accuracy']:.4f}"
+            )
 
     print("\nCompleted.")
     return 0

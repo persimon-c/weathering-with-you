@@ -19,9 +19,7 @@ sys.path.insert(0, ROOT)
 
 from scripts.run_models import prepare_data, run_model_eval
 from src.feature_groups import FEATURE_GROUPS, select_features
-from src.models.knn import KNearestNeighbors
-from src.models.logistic import LogisticRegression
-from src.models.naive_bayes import GaussianNaiveBayes
+from src.experiments import MODEL_METHODS, build_model
 
 
 TABLE_COLUMNS = [
@@ -34,35 +32,14 @@ TABLE_COLUMNS = [
 
 
 def build_models(seed):
-    """Create a fresh model for every group so no fitted state is reused."""
-    return [
-        (
-            "naive_bayes",
-            GaussianNaiveBayes(var_floor=1e-9),
-            {"var_floor": 1e-9},
-        ),
-        (
-            "logistic",
-            LogisticRegression(
-                lr=0.1,
-                epochs=2000,
-                reg=0.01,
-                class_weight="balanced",
-                seed=seed,
-            ),
-            {
-                "lr": 0.1,
-                "epochs": 2000,
-                "reg": 0.01,
-                "class_weight": "balanced",
-            },
-        ),
-        (
-            "knn",
-            KNearestNeighbors(k=5),
-            {"k": 5},
-        ),
-    ]
+    """Create fresh models using the shared settings."""
+    models = []
+
+    for name in MODEL_METHODS:
+        model, settings = build_model(name, seed=seed)
+        models.append((name, model, settings))
+
+    return models
 
 
 def format_metric(value):
@@ -110,10 +87,6 @@ def run_feature_groups(X_train, y_train, X_val, y_val,
         for method_name, model, hyperparameters in build_models(seed):
             run_hyperparameters = dict(hyperparameters)
             run_hyperparameters["group"] = group
-
-            # Logged as in run_models.py, so these rows differ from the old flagged ones
-            if method_name == "naive_bayes":
-                run_hyperparameters["missing_flag"] = False
 
             # Naive Bayes must not see the binary soil_wetness_missing
             # indicator. In the flooded class the flag is almost always 0
