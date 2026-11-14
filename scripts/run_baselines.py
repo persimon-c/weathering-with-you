@@ -69,7 +69,7 @@ def save_runs_csv(results):
             raise ValueError("results/runs.csv has an incompatible header")
 
     with path.open("a", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=RUN_COLUMNS)
+        writer = csv.DictWriter(file, fieldnames=RUN_COLUMNS, lineterminator="\n")
 
         if not file_exists:
             writer.writeheader()

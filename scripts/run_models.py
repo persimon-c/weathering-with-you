@@ -90,7 +90,7 @@ def append_run_to_csv(runs_csv_path, record):
     file_exists = os.path.isfile(runs_csv_path)
 
     with open(runs_csv_path, "a", encoding="utf-8", newline="") as f:
-        writer = csv.writer(f)
+        writer = csv.writer(f, lineterminator="\n")
         if not file_exists:
             writer.writerow(RUNS_HEADER)
 
@@ -186,6 +186,10 @@ def main():
         help="which model to evaluate (default: all available)"
     )
     parser.add_argument(
+        "--k", type=int, choices=KNN_KS, default=None,
+        help="single k value for KNN (default: run all in KNN_KS)"
+    )
+    parser.add_argument(
         "--runs-csv",
         default=os.path.join(ROOT, "results", "runs.csv"),
         help="output CSV file for runs (default: results/runs.csv)"
@@ -230,12 +234,14 @@ def main():
 
     # 3. K nearest neighbors, one validation row per k
     if args.model in ("all", "knn"):
+        target_ks = [args.k] if args.k is not None else KNN_KS
         scores = {k: run_model_eval("knn", KNearestNeighbors(k=k), {"k": k}, args.seed,
                                     X_train_s, y_train, X_val_s, y_val, args.runs_csv)
-                  for k in KNN_KS}
-        best = max(KNN_KS, key=lambda k: scores[k]["balanced_accuracy"])
-        print(f"\nKNN: picked k={best}, best validation balanced accuracy "
-              f"{scores[best]['balanced_accuracy']:.4f}")
+                  for k in target_ks}
+        if len(target_ks) > 1:
+            best = max(target_ks, key=lambda k: scores[k]["balanced_accuracy"])
+            print(f"\nKNN: picked k={best}, best validation balanced accuracy "
+                  f"{scores[best]['balanced_accuracy']:.4f}")
 
     print("\nCompleted.")
     return 0
