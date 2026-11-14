@@ -6,6 +6,10 @@ import unittest
 
 from scripts.compare import (
     METHODS,
+    OUTPUT_COLUMNS,
+    parse_hyperparameters,
+    read_runs,
+    resolve_commit,
     select_main_rows,
     write_csv,
     write_markdown,
@@ -152,6 +156,74 @@ class TestCompare(unittest.TestCase):
         self.assertIn("Source commit `abc123`", markdown)
         self.assertIn("KNN (k = 5)", markdown)
         self.assertIn("987 rows", markdown)
+        self.assertTrue(markdown.endswith("\n"))
+
+    def test_parse_hyperparameters_valid_and_empty(self):
+        self.assertEqual(parse_hyperparameters(""), {})
+        self.assertEqual(parse_hyperparameters(None), {})
+        self.assertEqual(parse_hyperparameters("   "), {})
+        self.assertEqual(parse_hyperparameters('{"k": 5}'), {"k": 5})
+
+    def test_parse_hyperparameters_invalid_json_raises(self):
+        with self.assertRaises(ValueError):
+            parse_hyperparameters("{bad: json}")
+
+    def test_parse_hyperparameters_non_dict_raises(self):
+        with self.assertRaises(ValueError):
+            parse_hyperparameters("42")
+        with self.assertRaises(ValueError):
+            parse_hyperparameters('["a", "b"]')
+
+    def test_read_runs_valid_and_bom(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = os.path.join(directory, "runs.csv")
+            fieldnames = [
+                "method", "git_commit", "split", "hyperparameters", "n_eval",
+                *OUTPUT_COLUMNS[1:],
+            ]
+            row = {col: "0" for col in fieldnames}
+            row["method"] = "majority"
+            row["git_commit"] = "abc123"
+            row["split"] = "val"
+            row["hyperparameters"] = "{}"
+            row["n_eval"] = "987"
+
+            with open(path, "w", encoding="utf-8-sig", newline="") as file:
+                writer = csv.DictWriter(file, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerow(row)
+
+            rows = read_runs(path)
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["method"], "majority")
+
+    def test_read_runs_missing_column_raises(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = os.path.join(directory, "runs_missing.csv")
+            with open(path, "w", encoding="utf-8", newline="") as file:
+                writer = csv.writer(file)
+                writer.writerow(["method", "git_commit"])
+                writer.writerow(["majority", "abc123"])
+
+            with self.assertRaises(ValueError):
+                read_runs(path)
+
+    def test_read_runs_empty_file_raises(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = os.path.join(directory, "runs_empty.csv")
+            with open(path, "w", encoding="utf-8", newline="") as file:
+                pass
+
+            with self.assertRaises(ValueError):
+                read_runs(path)
+
+    def test_resolve_commit_head(self):
+        commit = resolve_commit("HEAD")
+        self.assertTrue(len(commit) >= 7)
+
+    def test_resolve_commit_invalid_raises(self):
+        with self.assertRaises(ValueError):
+            resolve_commit("definitely_not_a_valid_git_commit_hash_123456789")
 
 
 if __name__ == "__main__":

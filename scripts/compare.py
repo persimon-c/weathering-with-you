@@ -117,7 +117,7 @@ def parse_hyperparameters(value):
 
 def is_main_setting(settings):
     """Feature-group rows carry a group key, main rows do not."""
-    return settings.get("group") in (None, "main")
+    return "group" not in settings
 
 
 def is_knn_five(settings):

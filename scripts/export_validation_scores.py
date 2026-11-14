@@ -2,6 +2,9 @@
 #
 # #28 needs the full score list to draw ROC curves, while results/runs.csv
 # stores only summary metrics and validation_errors.csv stores only mistakes.
+# The score column contains the raw predicted probability of flood (class 1)
+# formatted via repr(float) to preserve full floating-point precision for ROC AUC
+# calculation and curve plotting in #28. Consumers should parse with float(row['score']).
 #
 # Usage
 #   python scripts/export_validation_scores.py
@@ -156,10 +159,12 @@ def build_predictions(data_path, seed=SEED):
     )
 
     # Learned methods use the shared training-only preprocessing.
+    # Naive Bayes excludes the 15th column (soil_wetness_missing indicator) so
+    # a near-zero-variance binary feature does not produce probability spikes.
     naive_bayes = GaussianNaiveBayes(var_floor=NB_VAR_FLOOR)
-    naive_bayes.fit(X_train, np.asarray(y_train))
-    naive_bayes_scores = naive_bayes.predict_proba(X_val)[:, 1]
-    naive_bayes_predictions = naive_bayes.predict(X_val)
+    naive_bayes.fit(X_train[:, :-1], np.asarray(y_train))
+    naive_bayes_scores = naive_bayes.predict_proba(X_val[:, :-1])[:, 1]
+    naive_bayes_predictions = naive_bayes.predict(X_val[:, :-1])
 
     logistic = LogisticRegression(
         lr=LOGISTIC_LR,
