@@ -24,7 +24,7 @@ sys.path.insert(0, ROOT)
 
 from src.data import load_data
 from src.split import split_data
-from src.preprocess import preprocess_splits
+from src.preprocess import preprocess_splits, without_missing_flag
 from src.metrics import evaluate
 
 from src.models.naive_bayes import GaussianNaiveBayes
@@ -207,12 +207,12 @@ def main():
 
     # 1. Gaussian Naive Bayes
     if args.model in ("all", "nb"):
-        hparams = {"var_floor": 1e-9}
+        # Naive Bayes skips the 0/1 missing-soil flag, see without_missing_flag
+        hparams = {"var_floor": 1e-9, "missing_flag": False}
         nb = GaussianNaiveBayes(var_floor=hparams["var_floor"])
-        # Exclude soil_wetness_missing (15th column) because a near-zero variance
-        # binary indicator causes extreme probability spikes under Gaussian var_floor.
         run_model_eval("naive_bayes", nb, hparams, args.seed,
-                       X_train_s[:, :-1], y_train, X_val_s[:, :-1], y_val, args.runs_csv)
+                       without_missing_flag(X_train_s), y_train,
+                       without_missing_flag(X_val_s), y_val, args.runs_csv)
 
     # 2. Logistic Regression
     if args.model in ("all", "logistic"):
