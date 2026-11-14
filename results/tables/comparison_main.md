@@ -1,6 +1,6 @@
 # Main comparison table
 
-Source commit `68ca0ce`. All six rows use the same 2025 validation split (987 rows) and the main feature configuration.
+Source commit `3e8e3e5`. All six rows use the same 2025 validation split (987 rows) and the main feature configuration.
 
 Feature-group rows are excluded. KNN uses the k = 5 setting chosen on validation.
 
@@ -9,6 +9,6 @@ Feature-group rows are excluded. KNN uses the k = 5 setting chosen on validation
 | Majority | 0.500000 | 0.448603 | 0.000000 | 0.000000 | 0.500000 | 0 | 803 | 0 | 184 | 0.813576 |
 | Rain rule | 0.508853 | 0.484221 | 0.193548 | 0.391304 | 0.512230 | 72 | 503 | 300 | 112 | 0.582573 |
 | Place history | 0.781593 | 0.790029 | 0.682353 | 0.630435 | 0.906939 | 116 | 749 | 54 | 68 | 0.876393 |
-| Naive Bayes | 0.605934 | 0.588164 | 0.308880 | 0.434783 | 0.675930 | 80 | 624 | 179 | 104 | 0.713273 |
+| Naive Bayes | 0.540372 | 0.542844 | 0.273381 | 0.206522 | 0.686590 | 38 | 702 | 101 | 146 | 0.749747 |
 | Logistic regression | 0.707611 | 0.652748 | 0.380062 | 0.663043 | 0.752382 | 122 | 604 | 199 | 62 | 0.735562 |
 | KNN (k = 5) | 0.567485 | 0.576422 | 0.459459 | 0.184783 | 0.706556 | 34 | 763 | 40 | 150 | 0.807497 |
