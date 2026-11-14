@@ -48,7 +48,19 @@ The processed dataset, `data/processed/flood_data.csv`, is already in the reposi
    python scripts/run_models.py
    ```
 
-Every script appends to `results/runs.csv`, so rerunning adds new rows instead of replacing old ones. Each row records the git commit that produced it. The 2026 test set is not scored until Milestone 4.
+The baseline and model runners append to `results/runs.csv`, so rerunning adds new rows instead of replacing old ones. Each row records the git commit that produced it. The 2026 test set is not scored until Milestone 4.
+
+### Threshold sensitivity
+
+```bash
+python scripts/run_thresholds.py
+```
+
+This writes `results/tables/thresholds.csv` with 18 validation rows:
+six methods at each of 0.5, 1 and 2 percent. The 1 percent threshold
+remains the main result. See [threshold sensitivity notes](results/thresholds.md)
+for settings and column definitions. Rerunning replaces this table.
+The processed dataset remains unchanged.
 
 ## Tests
 
