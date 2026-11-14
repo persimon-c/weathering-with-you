@@ -14,16 +14,7 @@ import subprocess
 from src.data import load_data
 from src.split import split_data
 from src.metrics import evaluate_by_cluster
-from src.baselines import (
-    majority_predict,
-    majority_predict_proba,
-    rain_predict,
-    rain_predict_proba,
-    choose_rain_cutoff,
-    fit_place_history,
-    place_history_scores,
-    place_history_predict,
-)
+from src.experiments import BASELINES, predict_methods
 
 
 
@@ -115,66 +106,34 @@ def main():
 
     y_train = train["y"]
     y_val = val["y"]
-    X_val = val["X"]
 
     clusters = [
         row["cluster_id"]
         for row in val["metadata"]
     ]
 
-    majority_class = int(sum(y_train) > len(y_train) / 2)
-    prevalence = sum(y_train) / len(y_train)
-
-    majority_predictions = majority_predict(
-        X_val, majority_class
-    )
-    majority_scores = majority_predict_proba(
-        X_val, prevalence
-    )
-
-    cutoff = choose_rain_cutoff(train["X"], y_train)
-
-    rain_predictions = rain_predict(X_val, cutoff)
-    rain_scores = rain_predict_proba(X_val)
-
-    # Learn historical flood rates from training data only.
-    place_rates, overall_rate = fit_place_history(
-        train["X"], y_train
-    )
-
-    # Score 2025 validation cells.
-    place_scores = place_history_scores(
-        X_val, place_rates, overall_rate
-    )
-
-    place_predictions = place_history_predict(
-        X_val, place_rates, overall_rate
+    predictions = predict_methods(
+        train,
+        val,
+        methods=BASELINES,
     )
 
     results = {
         "dataset": "2025 validation",
         "train_samples": len(y_train),
         "validation_samples": len(y_val),
-        "rain_cutoff": cutoff,
-        "majority": evaluate_by_cluster(
-            y_val,
-            majority_predictions,
-            majority_scores,
-            clusters,
-        ),
-        "rainfall": evaluate_by_cluster(
-            y_val,
-            rain_predictions,
-            rain_scores,
-            clusters,
-        ),
-        "place_history": evaluate_by_cluster(
-            y_val,
-            place_predictions,
-            place_scores,
-            clusters,
-        ),
     }
+
+    for name, _, settings, predicted, scores in predictions:
+        if name == "rainfall":
+            results["rain_cutoff"] = settings["cutoff"]
+
+        results[name] = evaluate_by_cluster(
+            y_val,
+            predicted,
+            scores,
+            clusters,
+        )
 
     output = ROOT / "results" / "baselines_val.json"
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -185,7 +144,7 @@ def main():
     print("Baseline validation results")
     print(f"Training rows: {len(y_train)}")
     print(f"Validation rows: {len(y_val)}")
-    print(f"Rainfall cutoff: {cutoff:.3f}")
+    print(f"Rainfall cutoff: {results['rain_cutoff']:.3f}")
 
     for name in ("majority", "rainfall", "place_history"):
         scores = results[name]["overall"]
