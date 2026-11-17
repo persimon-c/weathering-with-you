@@ -17,8 +17,48 @@ Predict whether a 0.5 degree tile in the Philippines flooded in a Sentinel-1 sat
 
 - Python 3
 - NumPy
+- Matplotlib (for generating figures)
 
 Everything else is the Python standard library. There is no pandas and no scikit-learn: the loader, preprocessing, models and metrics are written from scratch.
+
+## Results
+
+All evaluations are performed on the **2025 validation set** (987 rows from 16 Sentinel-1 passes across 5 storm clusters). The **2026 test set (578 rows) is completely unused** and held out for Milestone 4.
+
+### Main Comparison Table
+
+Source commit `3e8e3e5`. The table compares all three baselines and three machine learning models evaluated on the frozen 2025 validation split:
+
+| Method | Balanced accuracy | Macro F1 | Precision | Recall | ROC AUC | TP | TN | FP | FN | Accuracy |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Majority | 0.500000 | 0.448603 | 0.000000 | 0.000000 | 0.500000 | 0 | 803 | 0 | 184 | 0.813576 |
+| Rain rule | 0.508853 | 0.484221 | 0.193548 | 0.391304 | 0.512230 | 72 | 503 | 300 | 112 | 0.582573 |
+| Place history | 0.781593 | 0.790029 | 0.682353 | 0.630435 | 0.906939 | 116 | 749 | 54 | 68 | 0.876393 |
+| Naive Bayes | 0.540372 | 0.542844 | 0.273381 | 0.206522 | 0.686590 | 38 | 702 | 101 | 146 | 0.749747 |
+| Logistic regression | 0.707611 | 0.652748 | 0.380062 | 0.663043 | 0.752382 | 122 | 604 | 199 | 62 | 0.735562 |
+| KNN (k = 5) | 0.567485 | 0.576422 | 0.459459 | 0.184783 | 0.706556 | 34 | 763 | 40 | 150 | 0.807497 |
+
+### Main Figures
+
+#### 1. ROC Curves and Validation Metrics
+![ROC curves](results/figures/roc_curves.png)
+![Metric bars](results/figures/metric_bars.png)
+
+#### 2. Feature Groups and Per-Cluster Analysis
+![Feature groups](results/figures/feature_groups.png)
+![Per cluster](results/figures/per_cluster.png)
+
+#### 3. Spatial Validation Map
+![Validation map](results/figures/validation_map.png)
+
+### Key Findings
+
+- **Place dominates weather:** A simple 3-day rainfall thresholding rule achieves balanced accuracy of 0.509 and ROC AUC of 0.512 (essentially chance), while the historical place baseline achieves balanced accuracy of 0.782 and ROC AUC of 0.907. Topography and drainage dictate where water accumulates far more than short-term rain accumulation.
+- **Why Naive Bayes and Logistic Regression cannot draw a map:**
+  - *Gaussian Naive Bayes* fits axis-aligned Gaussians to latitude and longitude independently, creating smooth elliptical contours centered on the map centroid that cannot capture non-convex islands or narrow river basins.
+  - *Logistic Regression* forms a single planar dividing boundary across coordinates $(lat, lon)$, unable to isolate localized flood-prone valleys. However, negative weights on elevation and balanced class weights allow it to achieve a competitive 0.708 balanced accuracy.
+- **Why KNN finds the same cell in other storms:**
+  - On place features alone $(lat, lon, elevation)$, KNN ($k=5$) achieves **0.795 balanced accuracy** and **0.910 ROC AUC**, because the nearest historical rows are the exact same 0.5° tile observed in 2022–2024. Adding 9 noisy weather dimensions dilutes spatial proximity in Euclidean space, dropping KNN's balanced accuracy to 0.567.
 
 ## Reproduce the results
 
@@ -39,28 +79,41 @@ The processed dataset, `data/processed/flood_data.csv`, is already in the reposi
    ```
    python scripts/build_dataset.py
    ```
-4. Score the three baselines on the 2025 validation set. This writes `results/baselines_val.json` with per-cluster scores and appends one row per baseline to `results/runs.csv`:
+4. Score the three baselines on the 2025 validation set (`results/runs.csv`):
    ```
    python scripts/run_baselines.py
    ```
-5. Train Gaussian Naive Bayes, logistic regression and K nearest neighbors on 2022 to 2024, score them on 2025, and append one row per model to `results/runs.csv`. KNN adds one row for each k in 5, 11, 21 and 51, and the script prints the k with the best validation balanced accuracy:
+5. Train Gaussian Naive Bayes, logistic regression, and KNN on 2022–2024 and evaluate on 2025:
    ```
    python scripts/run_models.py
    ```
+6. Build the main comparison table:
+   ```
+   python scripts/compare.py --commit 3e8e3e5
+   ```
+7. Run the feature-group ablation experiment:
+   ```
+   python scripts/run_feature_groups.py
+   ```
+8. Run per-cluster evaluation across storm events:
+   ```
+   python scripts/run_per_cluster.py
+   ```
+9. Run flood threshold sensitivity (0.5%, 1.0%, 2.0%):
+   ```
+   python scripts/run_thresholds.py
+   ```
+10. Run error analysis breakdown by geography, rain, and elevation:
+    ```
+    python scripts/run_error_analysis.py
+    ```
+11. Export validation predictions and generate all figures:
+    ```
+    python scripts/export_validation_scores.py
+    python scripts/plot_results.py
+    ```
 
-The baseline and model runners append to `results/runs.csv`, so rerunning adds new rows instead of replacing old ones. Each row records the git commit that produced it. The 2026 test set is not scored until Milestone 4.
-
-### Threshold sensitivity
-
-```bash
-python scripts/run_thresholds.py
-```
-
-This writes `results/tables/thresholds.csv` with 18 validation rows:
-six methods at each of 0.5, 1 and 2 percent. The 1 percent threshold
-remains the main result. See [threshold sensitivity notes](results/thresholds.md)
-for settings and column definitions. Rerunning replaces this table.
-The processed dataset remains unchanged.
+The runners append to `results/runs.csv` with the recording commit hash. The 2026 test set remains held out until Milestone 4.
 
 ## Tests
 
