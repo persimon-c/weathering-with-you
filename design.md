@@ -89,7 +89,7 @@ Almost every land cell in a pass has some detected water, so "any flood polygon"
 
 Request them together with `community=AG`. Use `GWETROOT` rather than `GWETTOP`, the surface layer, because the root zone stays wet over several days of rain and so reflects how saturated the ground is before a flood.
 
-Soil wetness is missing on every day at 9 cells that NASA POWER treats as ocean, 164 rows. Decide one policy before M2 ends, either drop the column or fill it and add a missing flag, and write it in the README.
+Soil wetness is missing on every day at 9 cells that NASA POWER treats as ocean, 164 rows. The policy is in recorded decision 3.
 
 All three methods use the same columns and the same preprocessing, fitted on training rows only.
 
@@ -132,7 +132,7 @@ The test year has only 3 storm clusters, so report results per cluster too, and 
 | Gaussian Naive Bayes | Probabilistic | Fast baseline, tests whether features carry independent evidence | Weak on place, because bell curves over latitude and longitude cannot draw a map |
 | Logistic regression | Linear | Weights show which features matter | Weak on raw place for the same reason, better with elevation |
 | K nearest neighbors | Instance-based | Similar places in similar weather should flood alike | Strong on place alone, because a cell's nearest rows are the same cell in other storms. Adding weather columns hurts it unless features are weighted |
-| Small MLP, optional | Neural | Can combine place and weather nonlinearly | Add only if M3 is on time |
+| Small MLP, optional | Neural | Can combine place and weather nonlinearly | Not added, see recorded decision 4 |
 
 All four are written from scratch with NumPy. No pandas, scikit-learn or similar.
 
@@ -179,7 +179,7 @@ All written from scratch.
 | `src/preprocess.py` | Standardize with training statistics, handle missing values |
 | `src/split.py` | Split by the `split` column |
 | `src/metrics.py` | All metrics |
-| `src/models/` | `naive_bayes.py`, `logistic.py`, `knn.py`, and `mlp.py` if added |
+| `src/models/` | `naive_bayes.py`, `logistic.py`, `knn.py` |
 | `src/gui.py`, `main.py` | Interface |
 | `results/` | Saved predictions, metric tables, figures |
 
