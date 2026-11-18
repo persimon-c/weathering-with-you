@@ -26,6 +26,52 @@ def confusion_matrix(y_true, y_pred):
     return tp, tn, fp, fn
 
 
+def roc_curve(y_true, y_score):
+    """Return (fpr, tpr) arrays for plotting the ROC curve.
+
+    Thresholds are every unique score plus a sentinel above the maximum.
+    The curve starts at (0, 0) and ends at (1, 1).
+    """
+    if len(y_true) != len(y_score):
+        raise ValueError("Input lengths must match.")
+
+    if not y_true:
+        raise ValueError("Inputs cannot be empty.")
+
+    if any(label not in (0, 1) for label in y_true):
+        raise ValueError("Labels must be 0 or 1.")
+
+    positives = sum(y_true)
+    negatives = len(y_true) - positives
+
+    if positives == 0 or negatives == 0:
+        return None
+
+    # Sort by score descending, then by label descending to break ties.
+    paired = sorted(
+        zip(y_score, y_true),
+        key=lambda pair: (-pair[0], -pair[1]),
+    )
+
+    fpr_list = [0.0]
+    tpr_list = [0.0]
+    tp = 0
+    fp = 0
+
+    for i, (score, label) in enumerate(paired):
+        if label == 1:
+            tp += 1
+        else:
+            fp += 1
+
+        # Emit a point when the next score differs or this is the last.
+        if i == len(paired) - 1 or paired[i + 1][0] != score:
+            fpr_list.append(fp / negatives)
+            tpr_list.append(tp / positives)
+
+    return fpr_list, tpr_list
+
+
 def roc_auc(y_true, y_score):
     if len(y_true) != len(y_score):
         raise ValueError("Input lengths must match.")

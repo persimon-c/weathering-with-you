@@ -5,6 +5,7 @@ from src.metrics import (
     confusion_matrix,
     evaluate,
     roc_auc,
+    roc_curve,
     evaluate_by_cluster
 )
 
@@ -286,6 +287,31 @@ class TestMetrics(unittest.TestCase):
         self.assertAlmostEqual(result["balanced_accuracy"], 2 / 3)
         self.assertAlmostEqual(result["f1"], 0.5)
         self.assertAlmostEqual(result["macro_f1"], 7 / 12)
+
+    # ---------------------------------
+    # ROC curve tests
+    # ---------------------------------
+
+    def test_roc_curve_perfect(self):
+        fpr, tpr = roc_curve([0, 0, 1, 1], [0.1, 0.2, 0.8, 0.9])
+        self.assertEqual(fpr[0], 0.0)
+        self.assertEqual(tpr[0], 0.0)
+        self.assertEqual(fpr[-1], 1.0)
+        self.assertEqual(tpr[-1], 1.0)
+        # For perfect separation, TPR reaches 1 before FPR increases
+        self.assertIn((0.0, 1.0), list(zip(fpr, tpr)))
+
+    def test_roc_curve_single_class(self):
+        self.assertIsNone(roc_curve([0, 0], [0.1, 0.2]))
+        self.assertIsNone(roc_curve([1, 1], [0.8, 0.9]))
+
+    def test_roc_curve_empty(self):
+        with self.assertRaises(ValueError):
+            roc_curve([], [])
+
+    def test_roc_curve_mismatched(self):
+        with self.assertRaises(ValueError):
+            roc_curve([0, 1], [0.5])
     
 
 
