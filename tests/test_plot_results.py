@@ -1,7 +1,10 @@
-import os
 import tempfile
 import unittest
 from pathlib import Path
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 
 from scripts.plot_results import (
     plot_roc_curves,
@@ -14,6 +17,19 @@ from scripts.plot_results import (
 
 class TestPlotResults(unittest.TestCase):
 
+    def assert_valid_png(self, path):
+        """Assert that the path is a non-empty, valid PNG with non-trivial pixel variance."""
+        self.assertTrue(path.is_file())
+        self.assertGreater(path.stat().st_size, 1000)
+        with open(path, "rb") as f:
+            self.assertEqual(f.read(8), b"\x89PNG\r\n\x1a\n")
+        img = plt.imread(path)
+        self.assertEqual(img.ndim, 3)
+        self.assertGreaterEqual(img.shape[0], 100)
+        self.assertGreaterEqual(img.shape[1], 100)
+        self.assertIn(img.shape[2], (3, 4))
+        self.assertGreater(float(img.std()), 0.01)
+
     def test_plot_roc_curves(self):
         scores = [
             {"method": "majority", "actual": "0", "score": "0.1"},
@@ -24,8 +40,7 @@ class TestPlotResults(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             out = Path(tmpdir) / "roc.png"
             plot_roc_curves(scores, out)
-            self.assertTrue(out.is_file())
-            self.assertGreater(out.stat().st_size, 0)
+            self.assert_valid_png(out)
 
     def test_plot_metric_bars(self):
         comparison = [
@@ -35,8 +50,7 @@ class TestPlotResults(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             out = Path(tmpdir) / "bars.png"
             plot_metric_bars(comparison, out)
-            self.assertTrue(out.is_file())
-            self.assertGreater(out.stat().st_size, 0)
+            self.assert_valid_png(out)
 
     def test_plot_feature_groups(self):
         fg = [
@@ -47,8 +61,7 @@ class TestPlotResults(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             out = Path(tmpdir) / "fg.png"
             plot_feature_groups(fg, out)
-            self.assertTrue(out.is_file())
-            self.assertGreater(out.stat().st_size, 0)
+            self.assert_valid_png(out)
 
     def test_plot_per_cluster(self):
         clusters = [
@@ -58,8 +71,7 @@ class TestPlotResults(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             out = Path(tmpdir) / "cluster.png"
             plot_per_cluster(clusters, out)
-            self.assertTrue(out.is_file())
-            self.assertGreater(out.stat().st_size, 0)
+            self.assert_valid_png(out)
 
     def test_plot_validation_map(self):
         scores = [
@@ -70,8 +82,7 @@ class TestPlotResults(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             out = Path(tmpdir) / "map.png"
             plot_validation_map(scores, out, method="place_history")
-            self.assertTrue(out.is_file())
-            self.assertGreater(out.stat().st_size, 0)
+            self.assert_valid_png(out)
 
 
 if __name__ == "__main__":

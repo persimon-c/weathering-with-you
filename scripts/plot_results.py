@@ -6,7 +6,6 @@
 #   python scripts/plot_results.py
 
 import csv
-import os
 import sys
 from pathlib import Path
 
@@ -17,7 +16,7 @@ import matplotlib.pyplot as plt
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.metrics import roc_curve
+from src.metrics import roc_auc, roc_curve
 
 FIGURES_DIR = ROOT / "results" / "figures"
 
@@ -117,11 +116,7 @@ def plot_roc_curves(scores_rows, output_path):
             continue
 
         fpr, tpr = result
-
-        # Compute AUC with the trapezoidal rule.
-        auc = 0.0
-        for i in range(1, len(fpr)):
-            auc += (fpr[i] - fpr[i - 1]) * (tpr[i] + tpr[i - 1]) / 2
+        auc = roc_auc(y_true, y_score)
 
         label = f"{DISPLAY_NAMES[method]} (AUC = {auc:.3f})"
         ax.plot(
