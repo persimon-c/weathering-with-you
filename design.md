@@ -89,7 +89,7 @@ Almost every land cell in a pass has some detected water, so "any flood polygon"
 
 Request them together with `community=AG`. Use `GWETROOT` rather than `GWETTOP`, the surface layer, because the root zone stays wet over several days of rain and so reflects how saturated the ground is before a flood.
 
-Soil wetness is missing on every day at 9 cells that NASA POWER treats as ocean, 164 rows. Decide one policy before M2 ends, either drop the column or fill it and add a missing flag, and write it in the README.
+Soil wetness is missing on every day at 9 cells that NASA POWER treats as ocean, 164 rows. The policy is in recorded decision 3.
 
 All three methods use the same columns and the same preprocessing, fitted on training rows only.
 
@@ -132,7 +132,7 @@ The test year has only 3 storm clusters, so report results per cluster too, and 
 | Gaussian Naive Bayes | Probabilistic | Fast baseline, tests whether features carry independent evidence | Weak on place, because bell curves over latitude and longitude cannot draw a map |
 | Logistic regression | Linear | Weights show which features matter | Weak on raw place for the same reason, better with elevation |
 | K nearest neighbors | Instance-based | Similar places in similar weather should flood alike | Strong on place alone, because a cell's nearest rows are the same cell in other storms. Adding weather columns hurts it unless features are weighted |
-| Small MLP, optional | Neural | Can combine place and weather nonlinearly | Add only if M3 is on time |
+| Small MLP, optional | Neural | Can combine place and weather nonlinearly | Not added, see recorded decision 4 |
 
 All four are written from scratch with NumPy. No pandas, scikit-learn or similar.
 
@@ -179,7 +179,7 @@ All written from scratch.
 | `src/preprocess.py` | Standardize with training statistics, handle missing values |
 | `src/split.py` | Split by the `split` column |
 | `src/metrics.py` | All metrics |
-| `src/models/` | `naive_bayes.py`, `logistic.py`, `knn.py`, and `mlp.py` if added |
+| `src/models/` | `naive_bayes.py`, `logistic.py`, `knn.py` |
 | `src/gui.py`, `main.py` | Interface |
 | `results/` | Saved predictions, metric tables, figures |
 
@@ -213,7 +213,7 @@ If the full download is not finished for M2, build the CSV from the passes alrea
 
 ## Recorded decisions
 
-1. **Flood threshold:** Frozen at 1.0% flooded area per cell before training (`flooded = flood_share > 0.01`). Sensitivity tested at 0.5% and 2.0% in M3; rankings and findings remain stable.
+1. **Flood threshold:** Frozen at 1.0% flooded area per cell before training (`flooded = flood_share > 1.0`, with `flood_share` in percent). Sensitivity tested at 0.5% and 2.0% in M3; rankings and findings remain stable.
 2. **Cell selection:** Kept rows as 0.5° cells with at least one flood polygon (3,531 rows across 61 passes and 253 cells). Avoids adding 13% guaranteed dry tiles outside PhilSA coverage.
 3. **Soil wetness policy:** Ocean cells with missing/fill values (`-999` or blank, 164 rows) are filled with the **training median** during preprocessing, and tracked with a binary indicator column `soil_wetness_missing`. Gaussian Naive Bayes explicitly excludes this binary missing flag to prevent zero-variance numerical singularity.
 4. **MLP decision:** Decided **against adding the MLP** at M3. The combination of linear (logistic), generative (Gaussian Naive Bayes), and local non-parametric (KNN) models already thoroughly characterizes the trade-off between spatial history and dynamic meteorological features. Adding an unregularized NumPy MLP adds significant implementation complexity without providing additional conceptual insight beyond what KNN and logistic regression already reveal.
