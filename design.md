@@ -185,33 +185,39 @@ All written from scratch.
 
 Allowed libraries: the Python standard library, NumPy for arrays and basic linear algebra, and Matplotlib for figures.
 
-### Changes the `carlos` branch needs to match this plan
+## Analysis of results
 
-| File | Now | Plan |
-|---|---|---|
-| `src/data.py` | Reads `rainfall`, `soil_wetness`, `humidity` and `temperature` | Read the columns above, including place and season |
-| `src/split.py` | Shuffles events at random, 80/20 | Split by year through the `split` column |
-| `src/metrics.py` | Accuracy, precision, recall, F1 | Add balanced accuracy, macro F1 and ROC AUC |
-| `data/processed/flood_data.csv` | Does not exist yet | Built by the pipeline above. This is the M2 critical path |
+### Why each method scores as it does
+
+- **Place against weather:** Where an area is located (latitude, longitude, elevation) accounts for nearly all flood predictability, whereas antecedent weather (rain accumulation, soil moisture, humidity, temperature) adds surprisingly little incremental signal once location is known. The 3-day rainfall baseline achieves a balanced accuracy of 0.509 and ROC AUC of 0.512 (no better than chance), while the place history baseline attains balanced accuracy of 0.782 and ROC AUC of 0.907. Topography dominates: low-lying river basins and floodplains flood repeatedly even under moderate rain, while elevated areas rarely flood even under severe downpours.
+- **Why Naive Bayes and Logistic Regression cannot draw a map:**
+  - *Gaussian Naive Bayes (balanced accuracy 0.540, ROC AUC 0.687):* Naive Bayes fits an axis-aligned Gaussian bell curve (mean and variance) to each feature independently per class. In spatial coordinates $(lat, lon)$, the joint class likelihood produces elliptical contours centered around the geographic centroid. Bivariate Gaussians cannot carve out non-convex island geography, fragmented shorelines, or localized flood basins. Moreover, the strong conditional dependence between latitude, longitude, and elevation severely violates the Naive Bayes assumption.
+  - *Logistic Regression (balanced accuracy 0.708, ROC AUC 0.752):* A linear classifier draws a single linear decision hyperplane through feature space. In $(lat, lon)$ coordinate space, this corresponds to a straight dividing line across the Philippine archipelago, incapable of outlining disjoint lowlands or irregular topography. Logistic regression outperforms Naive Bayes primarily because balanced class weighting prevents majority-class collapse, and negative elevation weights provide global separation (lowlands flood, mountains do not).
+- **Why KNN finds the same cell in other storms:**
+  - *KNN (balanced accuracy 0.567 on all features, but 0.795 on place alone):* In feature space restricted to place $(lat, lon, elevation)$, the 5 nearest neighbors for any validation cell are almost exclusively the *exact same 0.5° geographic cell* observed across earlier storm passes in 2022–2024. Consequently, KNN on place alone functions as an effective spatial lookup table, matching the strong place history baseline (balanced accuracy 0.795, ROC AUC 0.910). However, when 9 weather dimensions and seasonal harmonics are included, the high-dimensional Euclidean distance gets diluted by noisy weather fluctuations, pulling nearest neighbors away from the same geographic cell and dropping validation balanced accuracy to 0.567.
+
+### Test set status
+
+The **2026 test set was not used for training, tuning, or scoring**. All exploratory analyses, hyperparameter tuning, model comparisons, feature-group ablations, and threshold sensitivity experiments have been conducted strictly on the 2022–2024 training set (1,966 rows) and 2025 validation set (987 rows). The 578 rows from 2026 (12 passes across 3 storm clusters) are preserved untouched for final evaluation in Milestone 4.
 
 ## Milestone plan
 
 | Milestone | Due | Must have | Owner |
 |---|---|---|---|
-| M2 | Thu 12 Nov | Download and pipeline code written from scratch, processed CSV, split, metrics, majority baseline, Naive Bayes and logistic regression with first validation results, problems and next plan, task log | To assign |
-| M3 | Thu 19 Nov | KNN, all metrics own-code, comparison tables and graphs, feature-group and threshold experiments | To assign |
+| M2 | Thu 12 Nov | Download and pipeline code written from scratch, processed CSV, split, metrics, majority baseline, Naive Bayes and logistic regression with first validation results, problems and next plan, task log | Completed |
+| M3 | Thu 19 Nov | KNN, all metrics own-code, comparison tables and graphs, feature-group and threshold experiments | In progress |
 | M4 | Thu 26 Nov | Tuning on validation only, one test run, per-cluster results and intervals, complete project page | To assign |
 | Presentation | To be announced | Slides, every member presents a part, page and repo frozen | All |
 
 If the full download is not finished for M2, build the CSV from the passes already downloaded, report results on those, and say so in the progress report.
 
-## Open decisions
+## Recorded decisions
 
-1. Freeze the 1 percent threshold before training.
-2. Keep rows as cells with at least one flood polygon, or use every published tile. Published tiles add about 13 percent more rows, nearly all dry, and need each pass's tile list and a tile-number-to-coordinates table.
-3. Pick the soil wetness policy.
-4. Add the MLP or not, decided at M3.
-5. Assign an owner to each milestone task.
+1. **Flood threshold:** Frozen at 1.0% flooded area per cell before training (`flooded = flood_share > 0.01`). Sensitivity tested at 0.5% and 2.0% in M3; rankings and findings remain stable.
+2. **Cell selection:** Kept rows as 0.5° cells with at least one flood polygon (3,531 rows across 61 passes and 253 cells). Avoids adding 13% guaranteed dry tiles outside PhilSA coverage.
+3. **Soil wetness policy:** Ocean cells with missing/fill values (`-999` or blank, 164 rows) are filled with the **training median** during preprocessing, and tracked with a binary indicator column `soil_wetness_missing`. Gaussian Naive Bayes explicitly excludes this binary missing flag to prevent zero-variance numerical singularity.
+4. **MLP decision:** Decided **against adding the MLP** at M3. The combination of linear (logistic), generative (Gaussian Naive Bayes), and local non-parametric (KNN) models already thoroughly characterizes the trade-off between spatial history and dynamic meteorological features. Adding an unregularized NumPy MLP adds significant implementation complexity without providing additional conceptual insight beyond what KNN and logistic regression already reveal.
+5. **Milestone ownership:** Milestone tasks assigned and logged in `task-log.md` (Simone on dataset and weather fetching, Carlos on data evaluation and metrics, Nicholas on shapefiles and review analysis, Andrew on Naive Bayes, logistic regression, result plotting, and documentation).
 
 ## Limitations to state on the page
 
