@@ -99,6 +99,7 @@ The processed dataset, `data/processed/flood_data.csv`, is already in the reposi
    ```
    python scripts/compare.py --commit HEAD
    ```
+   `HEAD` works after rerunning steps 4 and 5. To rebuild the committed table without rerunning, use `--commit 3e8e3e5`.
 7. Run the feature-group ablation experiment:
    ```
    python scripts/run_feature_groups.py
