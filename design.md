@@ -213,7 +213,7 @@ If the full download is not finished for M2, build the CSV from the passes alrea
 
 ## Recorded decisions
 
-1. **Flood threshold:** Frozen at 1.0% flooded area per cell before training (`flooded = flood_share > 0.01`). Sensitivity tested at 0.5% and 2.0% in M3; rankings and findings remain stable.
+1. **Flood threshold:** Frozen at 1.0% flooded area per cell before training (`flooded = flood_share > 1.0`, with `flood_share` in percent). Sensitivity tested at 0.5% and 2.0% in M3; rankings and findings remain stable.
 2. **Cell selection:** Kept rows as 0.5° cells with at least one flood polygon (3,531 rows across 61 passes and 253 cells). Avoids adding 13% guaranteed dry tiles outside PhilSA coverage.
 3. **Soil wetness policy:** Ocean cells with missing/fill values (`-999` or blank, 164 rows) are filled with the **training median** during preprocessing, and tracked with a binary indicator column `soil_wetness_missing`. Gaussian Naive Bayes explicitly excludes this binary missing flag to prevent zero-variance numerical singularity.
 4. **MLP decision:** Decided **against adding the MLP** at M3. The combination of linear (logistic), generative (Gaussian Naive Bayes), and local non-parametric (KNN) models already thoroughly characterizes the trade-off between spatial history and dynamic meteorological features. Adding an unregularized NumPy MLP adds significant implementation complexity without providing additional conceptual insight beyond what KNN and logistic regression already reveal.
