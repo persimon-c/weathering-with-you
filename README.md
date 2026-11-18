@@ -19,11 +19,19 @@ Predict whether a 0.5 degree tile in the Philippines flooded in a Sentinel-1 sat
 - NumPy
 - Matplotlib (for generating figures)
 
-Everything else is the Python standard library. There is no pandas and no scikit-learn: the loader, preprocessing, models and metrics are written from scratch.
+Dependencies are listed in `requirements.txt`. Everything else is the Python standard library. There is no pandas and no scikit-learn: the loader, preprocessing, models and metrics are written from scratch.
+
+### Setup
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
 ## Results
 
-All evaluations are performed on the **2025 validation set** (987 rows from 16 Sentinel-1 passes across 5 storm clusters). The **2026 test set (578 rows) is completely unused** and held out for Milestone 4.
+All evaluations are performed on the **2025 validation set** (987 rows from 16 Sentinel-1 passes across 5 storm clusters). The **2026 test set (578 rows) was not used for training, tuning, or scoring** and is held out for Milestone 4.
 
 ### Main Comparison Table
 
@@ -132,3 +140,12 @@ python -m unittest discover -s tests -t .
 | `results/` | Frozen splits, `runs.csv` with one row per run, baseline per-cluster scores, `hyperparameters.md` with the settings and seed of every method |
 | `tests/` | Unit tests |
 | `task-log.md` | Member contributions per milestone |
+| `requirements.txt` | Dependencies (`numpy`, `matplotlib`) |
+
+## Task Log
+
+Member contributions and milestone progress are recorded in [`task-log.md`](task-log.md).
+
+## AI Tool Use Disclosure
+
+AI assistants (Claude, ChatGPT, GitHub Copilot) were consulted for drafting boilerplate code, generating plotting templates, and assisting with documentation drafting. All mathematical logic, metrics (`roc_auc`, `roc_curve`, balanced accuracy, macro F1), data preprocessing, model implementations, and evaluation numbers were verified independently through custom test suites and empirical validation runs.

@@ -198,14 +198,14 @@ Allowed libraries: the Python standard library, NumPy for arrays and basic linea
 
 ### Test set status
 
-The **2026 test set remains completely unused**. All exploratory analyses, hyperparameter tuning, model comparisons, feature-group ablations, and threshold sensitivity experiments have been conducted strictly on the 2022–2024 training set (1,966 rows) and 2025 validation set (987 rows). The 578 rows from 2026 (12 passes across 3 storm clusters) are preserved untouched for final evaluation in Milestone 4.
+The **2026 test set was not used for training, tuning, or scoring**. All exploratory analyses, hyperparameter tuning, model comparisons, feature-group ablations, and threshold sensitivity experiments have been conducted strictly on the 2022–2024 training set (1,966 rows) and 2025 validation set (987 rows). The 578 rows from 2026 (12 passes across 3 storm clusters) are preserved untouched for final evaluation in Milestone 4.
 
 ## Milestone plan
 
 | Milestone | Due | Must have | Owner |
 |---|---|---|---|
 | M2 | Thu 12 Nov | Download and pipeline code written from scratch, processed CSV, split, metrics, majority baseline, Naive Bayes and logistic regression with first validation results, problems and next plan, task log | Completed |
-| M3 | Thu 19 Nov | KNN, all metrics own-code, comparison tables and graphs, feature-group and threshold experiments | Completed |
+| M3 | Thu 19 Nov | KNN, all metrics own-code, comparison tables and graphs, feature-group and threshold experiments | In progress |
 | M4 | Thu 26 Nov | Tuning on validation only, one test run, per-cluster results and intervals, complete project page | To assign |
 | Presentation | To be announced | Slides, every member presents a part, page and repo frozen | All |
 
