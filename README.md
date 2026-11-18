@@ -35,7 +35,7 @@ All evaluations are performed on the **2025 validation set** (987 rows from 16 S
 
 ### Main Comparison Table
 
-The table compares all three baselines and three machine learning models evaluated on the frozen 2025 validation split:
+Source commit `3e8e3e5`. The table compares all three baselines and three machine learning models evaluated on the frozen 2025 validation split:
 
 | Method | Balanced accuracy | Macro F1 | Precision | Recall | ROC AUC | TP | TN | FP | FN | Accuracy |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -97,7 +97,7 @@ The processed dataset, `data/processed/flood_data.csv`, is already in the reposi
    ```
 6. Build the main comparison table:
    ```
-   python scripts/compare.py --commit HEAD
+   python scripts/compare.py --commit 3e8e3e5
    ```
    `HEAD` works after rerunning steps 4 and 5. To rebuild the committed table without rerunning, use `--commit 3e8e3e5`.
 7. Run the feature-group ablation experiment:
