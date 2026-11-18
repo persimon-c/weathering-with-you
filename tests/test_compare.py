@@ -153,7 +153,7 @@ class TestCompare(unittest.TestCase):
         self.assertEqual(written[0]["balanced_accuracy"], "0.700000")
         self.assertEqual(written[0]["tp"], "92")
         self.assertNotIn(b"\r\n", csv_bytes)
-        self.assertIn("Source commit `abc123`", markdown)
+        self.assertNotIn("Source commit", markdown)
         self.assertIn("KNN (k = 5)", markdown)
         self.assertIn("987 rows", markdown)
         self.assertTrue(markdown.endswith("\n"))

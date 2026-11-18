@@ -4,7 +4,7 @@
 # candidates and feature-group rows cannot change the table.
 #
 # Usage
-#   python scripts/compare.py --commit 3e8e3e5
+#   python scripts/compare.py --commit HEAD
 #   python scripts/compare.py --commit 40f2c29
 
 import argparse
@@ -227,7 +227,7 @@ def write_markdown(rows, path, commit):
     lines = [
         "# Main comparison table",
         "",
-        f"Source commit `{commit}`. All six rows use the same 2025 validation "
+        f"All six rows use the same 2025 validation "
         f"split ({n_eval} rows) and the main feature configuration.",
         "",
         "Feature-group rows are excluded. KNN uses the k = 5 setting chosen "
