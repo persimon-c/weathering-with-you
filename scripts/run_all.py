@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
 """Run the end-to-end validation benchmark pipeline and verify reproducible outputs.
 
-This script executes the entire reproducible evaluation pipeline:
-1. Environment and dependency verification (Python 3, numpy, matplotlib).
+This script executes the reproducible evaluation pipeline for Milestone 4:
+1. Environment and dependency verification:
+   - Verifies Python 3 runtime.
+   - Confirms required standard packages (numpy, matplotlib).
+   - AST-scans src/ and scripts/ to enforce that no unauthorized third-party ML
+     libraries (e.g. scikit-learn, pandas, scipy, torch) are imported.
+   - Sets single-thread execution (OMP_NUM_THREADS=1) and fixed seed (PYTHONHASHSEED=0)
+     to prevent BLAS/hash non-determinism across platforms.
 2. Full unit test suite discovery and execution.
-3. Pruning of any existing run records for the current HEAD commit from results/runs.csv
-   to guarantee idempotency on repeated execution.
+3. Idempotency management:
+   - Prunes any existing run records for the current HEAD commit from results/runs.csv
+     before appending, ensuring reproducible re-runs without compare.py row collisions.
 4. Step-by-step pipeline execution:
    - scripts/run_baselines.py
    - scripts/run_models.py
@@ -16,31 +23,49 @@ This script executes the entire reproducible evaluation pipeline:
    - scripts/run_per_cluster.py
    - scripts/export_validation_scores.py
    - scripts/plot_results.py
-5. Cryptographic checksum validation against results/tables/sha256.txt.
+5. Cryptographic checksum validation against results/tables/sha256.txt:
+   - Verifies the 6 deterministic, machine-readable validation CSV tables.
+   - (Note: results/runs.csv and results/tables/comparison_main.md are excluded from
+     checksumming by design because they log run timestamps and the current commit.)
 
 Usage:
-    python scripts/run_all.py                # Full reproduction run
-    python scripts/run_all.py --verify-only  # Run unit tests and checksum validation only
-    python scripts/run_all.py --skip-tests   # Skip unit tests during pipeline run
+    python scripts/run_all.py                # Full reproduction pipeline execution
+    python scripts/run_all.py --verify-only  # Verify checked-in tables and run tests only
+    python scripts/run_all.py --skip-tests   # Skip unit tests during reproduction
     python scripts/run_all.py --clean        # Purge __pycache__ before executing
 """
 
 import argparse
+import ast
 import csv
 import hashlib
 import os
 from pathlib import Path
+import platform
 import shutil
 import subprocess
 import sys
 import time
 import unittest
 
+# Ensure reproducible numeric and hashing behavior across platforms
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("PYTHONHASHSEED", "0")
+
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 MANIFEST_PATH = ROOT / "results" / "tables" / "sha256.txt"
 RUNS_CSV_PATH = ROOT / "results" / "runs.csv"
+
+DISALLOWED_LIBRARIES = {
+    "sklearn",
+    "scipy",
+    "pandas",
+    "torch",
+    "statsmodels",
+    "seaborn",
+}
 
 PIPELINE_STEPS = [
     ("1/9 Baselines", ["scripts/run_baselines.py"]),
@@ -55,12 +80,39 @@ PIPELINE_STEPS = [
 ]
 
 
-def check_environment():
-    """Verify runtime environment and required libraries."""
+def scan_for_disallowed_imports(root=ROOT):
+    """Enforce own-code contract by scanning src/ and scripts/ for unauthorized ML packages."""
+    violations = []
+    for folder in ("src", "scripts"):
+        target_dir = root / folder
+        if not target_dir.exists():
+            continue
+        for py_file in target_dir.rglob("*.py"):
+            try:
+                tree = ast.parse(py_file.read_text(encoding="utf-8"), filename=str(py_file))
+            except SyntaxError as e:
+                raise RuntimeError(f"Syntax error parsing {py_file}: {e}") from e
+
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    for alias in node.names:
+                        root_mod = alias.name.split(".")[0]
+                        if root_mod in DISALLOWED_LIBRARIES:
+                            violations.append((str(py_file.relative_to(root)), root_mod))
+                elif isinstance(node, ast.ImportFrom):
+                    if node.module:
+                        root_mod = node.module.split(".")[0]
+                        if root_mod in DISALLOWED_LIBRARIES:
+                            violations.append((str(py_file.relative_to(root)), root_mod))
+    return violations
+
+
+def check_environment(root=ROOT):
+    """Verify runtime environment, required dependencies, and own-code library constraints."""
     if sys.version_info[0] < 3:
         raise RuntimeError("Python 3 is required.")
 
-    # Verify standard dependencies
+    # Verify presence of authorized dependencies
     missing = []
     for package in ("numpy", "matplotlib"):
         try:
@@ -72,6 +124,15 @@ def check_environment():
         raise RuntimeError(
             f"Missing required dependencies: {', '.join(missing)}. "
             "Please install requirements.txt."
+        )
+
+    # Enforce own-code metric and model integrity
+    violations = scan_for_disallowed_imports(root)
+    if violations:
+        details = "; ".join(f"{file} imports {mod}" for file, mod in violations)
+        raise RuntimeError(
+            f"Disallowed third-party ML/stats library detected ({details}). "
+            "Course protocol mandates own-code algorithms and metrics."
         )
 
 
@@ -246,7 +307,7 @@ def main(argv=None):
     parser.add_argument(
         "--verify-only",
         action="store_true",
-        help="Run unit tests and verify table checksums without re-running the pipeline.",
+        help="Verify checked-in artifacts against checksum manifest and run unit tests without re-running the pipeline.",
     )
     parser.add_argument(
         "--skip-tests",
@@ -268,10 +329,22 @@ def main(argv=None):
         print(f"Cleaned {cleaned} cache directories / files.")
 
     try:
-        check_environment()
+        check_environment(ROOT)
     except RuntimeError as err:
         print(f"Environment check failed: {err}", file=sys.stderr)
         return 1
+
+    # Print environment diagnostic details
+    try:
+        import numpy as np
+        import matplotlib as mpl
+        print(
+            f"Environment: Python {platform.python_version()} on "
+            f"{platform.system()} {platform.machine()} | "
+            f"NumPy {np.__version__} | Matplotlib {mpl.__version__}"
+        )
+    except Exception:
+        pass
 
     if not args.skip_tests:
         tests_ok = run_unit_tests(ROOT)
@@ -297,7 +370,10 @@ def main(argv=None):
 
     total_time = time.perf_counter() - t_start
     print("\n" + "=" * 60)
-    print(f"REPRODUCTION SUCCESSFUL: All tables verified exactly ({total_time:.2f}s total)")
+    if args.verify_only:
+        print(f"MANIFEST VERIFIED: All tables match committed SHA-256 hashes ({total_time:.2f}s total)")
+    else:
+        print(f"REPRODUCTION SUCCESSFUL: All tables reproduced and verified exactly ({total_time:.2f}s total)")
     print("=" * 60)
     return 0
 

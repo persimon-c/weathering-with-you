@@ -1,28 +1,45 @@
 import csv
 import os
-import subprocess
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
 
 from scripts.run_all import (
     check_environment,
     clean_cache,
     compute_sha256,
-    get_git_commit,
+    main,
     prune_runs_csv,
+    scan_for_disallowed_imports,
     verify_checksums,
 )
 
 
 class TestRunAll(unittest.TestCase):
     def test_check_environment_passes(self):
-        # Current environment has Python 3, numpy, matplotlib
-        check_environment()
+        # Current environment has Python 3, numpy, matplotlib, and zero disallowed ML libraries
+        check_environment(ROOT)
+
+    def test_scan_for_disallowed_imports_detects_violations(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            src_dir = temp_root / "src"
+            src_dir.mkdir()
+
+            clean_file = src_dir / "clean.py"
+            clean_file.write_text("import numpy as np\nimport math\n", encoding="utf-8")
+            self.assertEqual(scan_for_disallowed_imports(temp_root), [])
+
+            # Inject disallowed library import
+            bad_file = src_dir / "bad.py"
+            bad_file.write_text("import sklearn.metrics\nfrom pandas import DataFrame\n", encoding="utf-8")
+            violations = scan_for_disallowed_imports(temp_root)
+            self.assertEqual(len(violations), 2)
+            mods = {mod for _, mod in violations}
+            self.assertIn("sklearn", mods)
+            self.assertIn("pandas", mods)
 
     def test_compute_sha256(self):
         with tempfile.NamedTemporaryFile("w+", delete=False) as f:
@@ -94,25 +111,10 @@ class TestRunAll(unittest.TestCase):
             self.assertFalse(ok)
             self.assertEqual(len(mismatches), 1)
 
-    def test_run_all_verify_only_cli(self):
-        # When called inside run_all's full test suite discovery, avoid infinite recursion by passing --skip-tests
-        cli_args = [sys.executable, "scripts/run_all.py", "--verify-only"]
-        if os.environ.get("RUN_ALL_ACTIVE"):
-            cli_args.append("--skip-tests")
-
-        result = subprocess.run(
-            cli_args,
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-        self.assertEqual(
-            result.returncode,
-            0,
-            f"CLI --verify-only failed with stderr:\n{result.stderr}\nstdout:\n{result.stdout}",
-        )
-        self.assertIn("REPRODUCTION SUCCESSFUL", result.stdout)
+    def test_main_verify_only_direct_call(self):
+        # Directly invoke main(["--verify-only", "--skip-tests"]) to test verify execution cleanly
+        exit_code = main(["--verify-only", "--skip-tests"])
+        self.assertEqual(exit_code, 0)
 
 
 if __name__ == "__main__":

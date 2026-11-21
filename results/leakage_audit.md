@@ -18,7 +18,7 @@ This document records the empirical verification of the 11-point data leakage ch
 
 ### 1. Target Not Present in Feature Set
 - **Status:** PASS
-- **Empirical Evidence:** In `src/data.py:24`, `TARGET = "flooded"` is isolated. The `FEATURES` list (`src/data.py:6-22`) contains exactly 14 predictor columns (`lat`, `lon`, `elevation`, `rain_1d`..`rain_30d`, `humidity`, `temperature`, `soil_wetness`, `month_sin`, `month_cos`). The target is explicitly popped from the feature matrix in `load_data()`.
+- **Empirical Evidence:** In `src/data.py:23`, `TARGET = "flooded"` is isolated. The `FEATURES` list (`src/data.py:6-21`) contains exactly 14 predictor columns (`lat`, `lon`, `elevation`, `rain_1d`..`rain_30d`, `humidity`, `temperature`, `soil_wetness`, `month_sin`, `month_cos`). The target is explicitly separated from the feature matrix in `src/data.py:load_data()`.
 
 ### 2. Target-Derived Columns Excluded
 - **Status:** PASS
@@ -26,11 +26,11 @@ This document records the empirical verification of the 11-point data leakage ch
 
 ### 3. Identifiers and Free-Text Fields Excluded
 - **Status:** PASS
-- **Empirical Evidence:** Free-text descriptions and arbitrary IDs are excluded. The spatial unit identifier `cell_id` is used exclusively for tabular lookup in the Place History baseline (`src/baselines.py:108-142`) and is never fed as a numeric feature to Gaussian Naive Bayes, Logistic Regression, or KNN. Pass metadata (`event_id`, `cluster_id`, `split`) is quarantined in `src/data.py:METADATA`.
+- **Empirical Evidence:** Free-text descriptions and arbitrary IDs are excluded. Spatial location is represented strictly by continuous numeric coordinates `(lat, lon)` used as features and for grid-cell lookup in the Place History baseline (`src/baselines.py:103-124`), never as categorical strings or entity IDs. Pass metadata (`event_id`, `cluster_id`, `split`) is quarantined in `src/data.py:24` (`METADATA`).
 
 ### 4. Zero Duplicate Rows Checked Across Splits
 - **Status:** PASS
-- **Empirical Evidence:** Split assignment is deterministic based on storm clusters and calendar years. Automated verification in `tests/test_data.py::test_processed_dataset_splits_have_zero_overlap` confirms zero row overlap across `train` (1,966 rows), `val` (987 rows), and `test` (578 rows), summing to all 3,531 rows.
+- **Empirical Evidence:** Split assignment is deterministic based on storm clusters and calendar years. Automated verification in `tests/test_data.py::test_processed_dataset_splits_have_zero_overlap` confirms zero row overlap in coordinates `(event_id, lat, lon)` and zero overlap in feature+target tuples across `train` (1,966 rows), `val` (987 rows), and `test` (578 rows), summing to all 3,531 rows.
 
 ### 5. Temporal Order Respected for Year-Stamped Data
 - **Status:** PASS
@@ -54,7 +54,7 @@ This document records the empirical verification of the 11-point data leakage ch
 
 ### 9. Hyperparameters Chosen on Validation Only
 - **Status:** PASS
-- **Empirical Evidence:** In Milestone 3, models operated on fixed default settings (KNN $k=5$, LR $\lambda=0.01, \eta=0.10$, GNB default, Place History default $\tau=0.50$). Systematic validation threshold tuning ($\\tau \in [0.02, 0.90]$) is strictly confined to the validation split as scheduled in Milestone 4 (Issue #44). Zero test data is used for model selection.
+- **Empirical Evidence:** In Milestone 3, models operated on fixed default configurations (KNN $k=5$, LR $\lambda=0.01, \eta=0.10$, GNB default, Place History default cutoff $\tau=0.50$), and threshold sensitivity sweeps (`scripts/run_thresholds.py`) evaluated catchment flood share thresholds (`THRESHOLDS = (0.5, 1.0, 2.0)` percent) solely on the validation split. Systematic decision-threshold tuning ($\tau \in [0.02, 0.90]$) is strictly confined to the validation split as scheduled for Milestone 4 (Issue #44). Zero test data is used for model selection.
 
 ### 10. Single Test Set Evaluation Gate
 - **Status:** PASS

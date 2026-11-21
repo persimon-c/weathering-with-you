@@ -1,6 +1,6 @@
 # Main comparison table
 
-Source commit `9db22da`. All six rows use the same 2025 validation split (987 rows) and the main feature configuration.
+Source commit `3e8e3e5`. All six rows use the same 2025 validation split (987 rows) and the main feature configuration.
 
 Feature-group rows are excluded. KNN uses the k = 5 setting chosen on validation.
 
