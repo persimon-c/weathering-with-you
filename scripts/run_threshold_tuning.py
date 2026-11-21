@@ -45,13 +45,16 @@ Usage:
 
 import argparse
 import csv
-import sys
 from pathlib import Path
+import sys
+
+import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from src.data import load_data, FEATURES
+from src.feature_groups import select_features
 from src.split import split_data
 from src.preprocess import fit_preprocess, transform_preprocess
 from src.experiments import build_model, model_features
@@ -78,10 +81,6 @@ FIELDS = [
     "is_optimal",
 ]
 
-# Place feature indices in the PREPROCESSED matrix (after transform_preprocess).
-# FEATURES = [lat(0), lon(1), elevation(2), rain_1d(3), ...]
-_PLACE_INDICES = [0, 1, 2]  # lat, lon, elevation
-
 
 def load_scores(path):
     """Read validation_scores.csv and return {method: (y_true, scores)} dict.
@@ -101,14 +100,23 @@ def load_scores(path):
             data[m]["s"].append(float(row["score"]))
 
     # Sanity check: tau=0.50 must reproduce comparison_main.csv for tunable methods.
-    # Ground truth from results/tables/comparison_main.csv (committed artifact).
-    _EXPECTED_AT_50 = {
-        "place_history": 0.781593,
-        "logistic":      0.707611,
-        "naive_bayes":   0.540372,
-        "knn":           0.567485,
-    }
-    for method, expected in _EXPECTED_AT_50.items():
+    # Dynamically read comparison_main.csv if available; fall back to reference constants.
+    comparison_main_path = ROOT / "results" / "tables" / "comparison_main.csv"
+    expected_at_50 = {}
+    if comparison_main_path.exists():
+        with open(comparison_main_path, encoding="utf-8", newline="") as cf:
+            for r in csv.DictReader(cf):
+                if r["method"] in TUNABLE_METHODS:
+                    expected_at_50[r["method"]] = float(r["balanced_accuracy"])
+    if not expected_at_50:
+        expected_at_50 = {
+            "place_history": 0.781593,
+            "logistic":      0.707611,
+            "naive_bayes":   0.540372,
+            "knn":           0.567485,
+        }
+
+    for method, expected in expected_at_50.items():
         if method not in data:
             raise ValueError(f"Method '{method}' not found in {path}")
         y = data[method]["y"]
@@ -197,10 +205,9 @@ def run_place_only_knn(data_path, seed=42):
     X_train_full = transform_preprocess(train["X"], params)
     X_val_full = transform_preprocess(val["X"], params)
 
-    # Select place columns only (indices 0=lat, 1=lon, 2=elevation)
-    import numpy as np
-    X_train_place = X_train_full[:, _PLACE_INDICES]
-    X_val_place = X_val_full[:, _PLACE_INDICES]
+    # Select place columns only (lat, lon, elevation) using feature groups helper
+    X_train_place = select_features(X_train_full, "place")
+    X_val_place = select_features(X_val_full, "place")
 
     model, _ = build_model("knn", seed=seed, k=5)
     model.fit(X_train_place, train["y"])
@@ -269,6 +276,7 @@ def run_threshold_tuning(scores_path, data_path, output, seed=42,
     if include_place_only:
         # D6: Fit place-only KNN, sweep the same 18-tau grid
         y_true, place_scores = run_place_only_knn(data_path, seed=seed)
+        n_eval_place = len(y_true)
         grid_rows = sweep(y_true, place_scores)
         best_tau, _, _, _ = select_optimal(grid_rows)
 
@@ -276,7 +284,7 @@ def run_threshold_tuning(scores_path, data_path, output, seed=42,
             tau = gr["tau"]
             is_opt = (tau == best_tau)
             all_rows.append(format_row(
-                tau, "knn", "place", n_eval, gr, is_opt
+                tau, "knn", "place", n_eval_place, gr, is_opt
             ))
 
     output = Path(output)

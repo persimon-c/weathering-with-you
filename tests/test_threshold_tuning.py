@@ -113,65 +113,38 @@ class TestSweepAndSelectOptimal(unittest.TestCase):
 
 
 class TestRunThresholdTuning(unittest.TestCase):
-    """Integration test with synthetic data."""
-
-    def _write_synthetic_scores(self, path, n_per_method=40):
-        """Write a minimal valid validation_scores.csv with synthetic data."""
-        # Must have exactly the 4 tunable methods with n_per_method each,
-        # plus the two non-tunable so load_scores doesn't miss them.
-        # Scores chosen so tau=0.50 gives the same BalAcc as the sanity check expects.
-        # We skip the sanity check by patching the expected values.
-        methods_scores = {
-            "place_history": 0.80,
-            "logistic": 0.60,
-            "naive_bayes": 0.55,
-            "knn": 0.40,
-            "majority": 0.17,
-            "rainfall": 0.95,
-        }
-        y_base = [1, 0] * (n_per_method // 2)
-
-        with path.open("w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(
-                f,
-                fieldnames=["method", "actual", "score", "predicted",
-                             "event_id", "cluster_id", "lat", "lon"],
-                lineterminator="\n",
-            )
-            writer.writeheader()
-            for method, score in methods_scores.items():
-                for i, actual in enumerate(y_base):
-                    writer.writerow({
-                        "method": method,
-                        "actual": actual,
-                        "score": score if actual == 1 else score - 0.3,
-                        "predicted": int((score if actual == 1 else score - 0.3) >= 0.5),
-                        "event_id": f"ev{i}",
-                        "cluster_id": "14",
-                        "lat": 10.0,
-                        "lon": 120.0,
-                    })
+    """Integration test and artifact verification."""
 
     def test_output_has_72_main_rows(self):
         """Main table: 4 methods x 18 tau = 72 rows."""
+        if not SCORES_PATH.exists() or not DATA_PATH.exists():
+            self.skipTest("Committed score/data files not found")
         with tempfile.TemporaryDirectory() as d:
-            scores = Path(d) / "scores.csv"
             output = Path(d) / "threshold_tuning.csv"
-            self._write_synthetic_scores(scores)
-            # Monkey-patch the sanity check expected values to bypass real-data check
-            import scripts.run_threshold_tuning as rtt
-            orig = rtt._EXPECTED_PLACEHOLDER = getattr(rtt, "_EXPECTED_PLACEHOLDER", None)
-            # Call directly with disable_sanity=True workaround: use DATA_PATH dummy
-            # Instead, run with real scores from the committed file if available
-            if SCORES_PATH.exists() and DATA_PATH.exists():
-                rows = run_threshold_tuning(
-                    SCORES_PATH, DATA_PATH, output,
-                    include_place_only=False,
-                )
-                self.assertEqual(len(rows), 72)
-                with output.open() as f:
-                    saved = list(csv.DictReader(f))
-                self.assertEqual(len(saved), 72)
+            rows = run_threshold_tuning(
+                SCORES_PATH, DATA_PATH, output,
+                include_place_only=False,
+            )
+            self.assertEqual(len(rows), 72)
+            with output.open() as f:
+                saved = list(csv.DictReader(f))
+            self.assertEqual(len(saved), 72)
+
+    def test_fresh_run_matches_committed_csv(self):
+        """A fresh run must be byte-for-byte identical to the committed CSV (Finding C)."""
+        if not SCORES_PATH.exists() or not DATA_PATH.exists() or not COMMITTED_CSV.exists():
+            self.skipTest("Required files not found")
+        with tempfile.TemporaryDirectory() as d:
+            fresh_output = Path(d) / "threshold_tuning.csv"
+            run_threshold_tuning(
+                SCORES_PATH, DATA_PATH, fresh_output,
+                include_place_only=False,
+            )
+            self.assertEqual(
+                fresh_output.read_bytes(),
+                COMMITTED_CSV.read_bytes(),
+                "Fresh run output must be byte-identical to committed threshold_tuning.csv",
+            )
 
     def test_output_has_correct_fields(self):
         """Every row must have the full set of FIELDS."""

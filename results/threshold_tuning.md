@@ -49,9 +49,11 @@ lower $\tau$ (higher recall / disaster safety).
 |---|---|---:|---:|---:|---:|---:|---:|---|
 | **Place History** | Cell ID | 0.781593 | **0.30** | **0.856608** | 0.831522 | 0.616935 | 0.708333 | Dominant baseline; lowers FN from 68 to 31 |
 | **Logistic Regression** | Full (15) | 0.707611 | **0.45** | **0.716786** | 0.733696 | 0.359043 | 0.482143 | Balances recall gain against precision cost |
-| **Gaussian Naive Bayes** | Place+Weather (14) | 0.540372 | **0.05** | **0.659108** | 0.798913 | 0.275797 | 0.410042 | Optimum at $\tau=0.05$; $\tau=0.10 \to 0.6547$ |
+| **Gaussian Naive Bayes** | Place+Weather+Season (15) | 0.540372 | **0.05** | **0.659108** | 0.798913 | 0.275797 | 0.410042 | Optimum at $\tau=0.05$ (drops missing-soil flag, 14 effective); $\tau=0.10 \to 0.6547$ |
 | **KNN ($k=5$)** | Full (15) | 0.567485 | **0.02** | **0.664654** | 0.782609 | 0.283465 | 0.416185 | Plateau across $\tau \in [0.02, 0.20]$ from discrete votes |
-| *KNN ($k=5$, place-only)* | Place (3) | *0.795238* | ***0.02*** | ***0.853670*** | *0.940217* | *0.480556* | *0.636029* | *Spatial-only KNN approaches Place History* |
+| *KNN ($k=5$, place-only)* | Place (3) | *0.795238* | ***0.02*** | ***0.853670*** | *0.940217* | *0.480556* | *0.636029* | *Spatial-only KNN approaches Place History (evaluated via `--place-only` ablation; not in 72-row main table)* |
+
+*(Note: ROC AUC is reported per row in `threshold_tuning.csv` but is constant across all $\tau$ for each method, because ROC AUC measures threshold-independent ranking ability.)*
 
 ## Analysis and Findings
 

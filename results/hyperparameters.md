@@ -44,9 +44,9 @@ Optimal operating points selected by validation balanced accuracy (ties broken b
 |---|---|---:|---:|---:|---:|---:|---:|---|
 | Place history | `place` (cell ID) | 0.781593 | **0.30** | **0.856608** | 0.831522 | 0.616935 | 0.708333 | Dominant benchmark; lowers FN from 68 to 31 |
 | Logistic regression | `place_weather_season` (15) | 0.707611 | **0.45** | **0.716786** | 0.733696 | 0.359043 | 0.482143 | Favorable recall trade-off (+13 TP for +42 FP) |
-| Gaussian Naive Bayes | `place_weather` (14) | 0.540372 | **0.05** | **0.659108** | 0.798913 | 0.275797 | 0.410042 | Low-$\tau$ optimum; $\tau=0.10 \to 0.654739$ |
+| Gaussian Naive Bayes | `place_weather_season` (15) | 0.540372 | **0.05** | **0.659108** | 0.798913 | 0.275797 | 0.410042 | Low-$\tau$ optimum (GNB drops missing-soil flag, 14 effective); $\tau=0.10 \to 0.654739$ |
 | KNN ($k=5$) | `place_weather_season` (15) | 0.567485 | **0.02** | **0.664654** | 0.782609 | 0.283465 | 0.416185 | Plateau across $\tau \in [0.02, 0.20]$ from discrete votes |
-| *KNN ($k=5$, place-only)* | `place` (3) | *0.795238* | ***0.02*** | ***0.853670*** | *0.940217* | *0.480556* | *0.636029* | *Spatial-only KNN approaches Place History* |
+| *KNN ($k=5$, place-only)* | `place` (3) | *0.795238* | ***0.02*** | ***0.853670*** | *0.940217* | *0.480556* | *0.636029* | *Spatial-only KNN approaches Place History (evaluated via `--place-only` ablation; not in 72-row main table)* |
 
 Detailed per-threshold metrics and confusion matrices are saved in [`tables/threshold_tuning.csv`](tables/threshold_tuning.csv) and discussed in [`threshold_tuning.md`](threshold_tuning.md).
 
