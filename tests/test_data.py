@@ -142,5 +142,35 @@ class TestData(unittest.TestCase):
             load_data(self.path)
 
 
+    def test_processed_dataset_splits_have_zero_overlap(self):
+        dataset_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "data", "processed", "flood_data.csv"
+        )
+        if not os.path.exists(dataset_path):
+            self.skipTest("data/processed/flood_data.csv not found")
+
+        with open(dataset_path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            train_keys = set()
+            val_keys = set()
+            test_keys = set()
+
+            for row in reader:
+                key = (row["event_id"], row["lat"], row["lon"])
+                split = row["split"]
+                if split == "train":
+                    train_keys.add(key)
+                elif split == "val":
+                    val_keys.add(key)
+                elif split == "test":
+                    test_keys.add(key)
+
+            self.assertEqual(len(train_keys & val_keys), 0)
+            self.assertEqual(len(train_keys & test_keys), 0)
+            self.assertEqual(len(val_keys & test_keys), 0)
+            self.assertEqual(len(train_keys) + len(val_keys) + len(test_keys), 3531)
+
+
 if __name__ == "__main__":
     unittest.main()

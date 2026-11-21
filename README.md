@@ -142,6 +142,7 @@ python -m unittest discover -s tests -t .
 | `tests/` | Unit tests |
 | `task-log.md` | Member contributions per milestone |
 | `requirements.txt` | Dependencies (`numpy`, `matplotlib`) |
+| `LICENSE` | MIT License |
 
 ## Task Log
 
@@ -150,3 +151,9 @@ Member contributions and milestone progress are recorded in [`task-log.md`](task
 ## AI Tool Use Disclosure
 
 AI assistants (Claude, ChatGPT, GitHub Copilot) were consulted for drafting boilerplate code, generating plotting templates, and assisting with documentation drafting. All mathematical logic, metrics (`roc_auc`, `roc_curve`, balanced accuracy, macro F1), data preprocessing, model implementations, and evaluation numbers were verified independently through custom test suites and empirical validation runs.
+
+## License
+
+- **Code:** Licensed under the [MIT License](LICENSE).
+- **Flood Inundation Maps:** Provided by the Philippine Space Agency (PhilSA) via the Humanitarian Data Exchange, licensed under Creative Commons Attribution ([CC BY](https://creativecommons.org/licenses/by/4.0/)). Credit: *"Philippine Space Agency (PhilSA), via the Humanitarian Data Exchange"*. See [`data/README.md`](data/README.md) for full details.
+- **Meteorological & Surface Data:** Sourced from NASA POWER (Prediction of Worldwide Energy Resources), free to use with credit to the NASA POWER Project.

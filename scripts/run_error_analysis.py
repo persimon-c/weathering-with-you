@@ -209,6 +209,7 @@ def run_error_analysis(data_path, output_dir, seed=42):
             writer = csv.DictWriter(
                 file,
                 fieldnames=fields,
+                lineterminator="\n",
             )
             writer.writeheader()
             writer.writerows(rows)
