@@ -22,9 +22,10 @@ This script executes the reproducible evaluation pipeline for Milestone 4:
    - scripts/run_error_analysis.py
    - scripts/run_per_cluster.py
    - scripts/export_validation_scores.py
+   - scripts/run_threshold_tuning.py
    - scripts/plot_results.py
 5. Cryptographic checksum validation against results/tables/sha256.txt:
-   - Verifies the 6 deterministic, machine-readable validation CSV tables.
+   - Verifies the 7 deterministic, machine-readable validation CSV tables.
    - (Note: results/runs.csv and results/tables/comparison_main.md are excluded from
      checksumming by design because they log run timestamps and the current commit.)
 
@@ -68,15 +69,16 @@ DISALLOWED_LIBRARIES = {
 }
 
 PIPELINE_STEPS = [
-    ("1/9 Baselines", ["scripts/run_baselines.py"]),
-    ("2/9 Models (NB, LR, KNN)", ["scripts/run_models.py"]),
-    ("3/9 Comparison Table", ["scripts/compare.py", "--commit", "{commit}"]),
-    ("4/9 Threshold Sweep", ["scripts/run_thresholds.py"]),
-    ("5/9 Feature Group Ablation", ["scripts/run_feature_groups.py"]),
-    ("6/9 Error Analysis", ["scripts/run_error_analysis.py"]),
-    ("7/9 Per-Cluster Evaluation", ["scripts/run_per_cluster.py"]),
-    ("8/9 Export Validation Scores", ["scripts/export_validation_scores.py"]),
-    ("9/9 Plot Results", ["scripts/plot_results.py"]),
+    ("1/10 Baselines", ["scripts/run_baselines.py"]),
+    ("2/10 Models (NB, LR, KNN)", ["scripts/run_models.py"]),
+    ("3/10 Comparison Table", ["scripts/compare.py", "--commit", "{commit}"]),
+    ("4/10 Threshold Sweep", ["scripts/run_thresholds.py"]),
+    ("5/10 Feature Group Ablation", ["scripts/run_feature_groups.py"]),
+    ("6/10 Error Analysis", ["scripts/run_error_analysis.py"]),
+    ("7/10 Per-Cluster Evaluation", ["scripts/run_per_cluster.py"]),
+    ("8/10 Export Validation Scores", ["scripts/export_validation_scores.py"]),
+    ("9/10 Threshold Tuning", ["scripts/run_threshold_tuning.py"]),
+    ("10/10 Plot Results", ["scripts/plot_results.py"]),
 ]
 
 
