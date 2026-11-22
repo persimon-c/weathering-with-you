@@ -94,11 +94,10 @@ class TestSweepAndSelectOptimal(unittest.TestCase):
     def test_select_optimal_returns_valid_tau(self):
         y, s = self._make_scores(100)
         rows = sweep(y, s)
-        best_tau, plateau_start, plateau_end, best_ba = select_optimal(rows)
+        best_tau = select_optimal(rows)
         self.assertIn(best_tau, TAU_GRID)
-        self.assertGreater(best_ba, 0.0)
-        self.assertLessEqual(plateau_start, best_tau)
-        self.assertGreaterEqual(plateau_end, best_tau)
+        best_ba = max(r["balanced_accuracy"] for r in rows)
+        self.assertEqual(next(r for r in rows if r["tau"] == best_tau)["balanced_accuracy"], best_ba)
 
     def test_select_optimal_tie_break_lowest_tau(self):
         """When two tau values share the max BalAcc, the lower tau wins (D8)."""
@@ -106,7 +105,7 @@ class TestSweepAndSelectOptimal(unittest.TestCase):
         # Uniform scores -> tied at every threshold that keeps some positive/negative
         s = [0.50] * 200
         rows = sweep(y, s)
-        best_tau, _, _, _ = select_optimal(rows)
+        best_tau = select_optimal(rows)
         # With all scores = 0.50, every threshold gives balanced accuracy 0.50.
         # The lowest tau that gives max BalAcc wins.
         self.assertEqual(best_tau, min(TAU_GRID))

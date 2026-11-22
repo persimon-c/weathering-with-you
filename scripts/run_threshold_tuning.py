@@ -25,7 +25,7 @@ from the grid sweep:
                 The rain rule's real operating point is a mm cutoff (50.98 mm),
                 already tuned on training balanced accuracy in run_baselines.py.
 
-Design decisions (see M4-Issue-Plan.md §4):
+Design decisions (Issue #44, PR #51):
   D1  New script; run_thresholds.py is untouched (different axis, different test)
   D2  Reuse threshold-independent scores; fit each method once
   D3  Four tunable methods; majority + rainfall documented as not tau-tunable
@@ -48,16 +48,14 @@ import csv
 from pathlib import Path
 import sys
 
-import numpy as np
-
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.data import load_data, FEATURES
+from src.data import load_data
 from src.feature_groups import select_features
 from src.split import split_data
 from src.preprocess import fit_preprocess, transform_preprocess
-from src.experiments import build_model, model_features
+from src.experiments import build_model
 from src.metrics import evaluate
 
 TAU_GRID = (
@@ -100,20 +98,11 @@ def load_scores(path):
             data[m]["s"].append(float(row["score"]))
 
     # Sanity check: tau=0.50 must reproduce comparison_main.csv for tunable methods.
-    # Dynamically read comparison_main.csv if available; fall back to reference constants.
     comparison_main_path = ROOT / "results" / "tables" / "comparison_main.csv"
-    expected_at_50 = {}
-    if comparison_main_path.exists():
-        with open(comparison_main_path, encoding="utf-8", newline="") as cf:
-            for r in csv.DictReader(cf):
-                if r["method"] in TUNABLE_METHODS:
-                    expected_at_50[r["method"]] = float(r["balanced_accuracy"])
-    if not expected_at_50:
+    with open(comparison_main_path, encoding="utf-8", newline="") as cf:
         expected_at_50 = {
-            "place_history": 0.781593,
-            "logistic":      0.707611,
-            "naive_bayes":   0.540372,
-            "knn":           0.567485,
+            r["method"]: float(r["balanced_accuracy"])
+            for r in csv.DictReader(cf) if r["method"] in TUNABLE_METHODS
         }
 
     for method, expected in expected_at_50.items():
@@ -152,39 +141,14 @@ def sweep(y_true, scores, grid=TAU_GRID):
 
 
 def select_optimal(rows):
-    """Return (tau*, plateau_start, plateau_end, best_bal_acc) using D8 selection rule.
+    """Return tau*: argmax balanced accuracy, ties broken by lowest tau (D8).
 
-    Selection: argmax balanced_accuracy; ties broken by lowest tau.
-    Also records the full plateau span (contiguous run of tau values sharing
-    the same balanced accuracy as the optimum).
+    The KNN plateau (D5) is documented in results/threshold_tuning.md.
     """
-    best_ba = max(r["balanced_accuracy"] for r in rows if r["balanced_accuracy"] is not None)
-    best_rows = [r for r in rows if r["balanced_accuracy"] == best_ba]
-    # Ties: lowest tau (recall-favoring, D8)
-    best_tau = min(r["tau"] for r in best_rows)
-
-    # Plateau: find contiguous block at the grid level sharing best_ba
-    taus = [r["tau"] for r in rows if r["balanced_accuracy"] == best_ba]
-    # Sort and find contiguous runs in the grid
-    grid_list = list(TAU_GRID)
-    plateau_indices = sorted(grid_list.index(t) for t in taus if t in grid_list)
-    # Largest contiguous run containing best_tau's index
-    best_idx = grid_list.index(best_tau)
-    start_idx = best_idx
-    end_idx = best_idx
-    for i in plateau_indices:
-        if i <= best_idx:
-            start_idx = min(start_idx, i)
-        if i >= best_idx:
-            end_idx = max(end_idx, i)
-    # Verify they're actually contiguous from start to end
-    contiguous = all(j in plateau_indices for j in range(start_idx, end_idx + 1))
-    if not contiguous:
-        end_idx = best_idx  # fall back to just the optimal point
-
-    plateau_start = grid_list[start_idx]
-    plateau_end = grid_list[end_idx]
-    return best_tau, plateau_start, plateau_end, best_ba
+    return max(
+        (r for r in rows if r["balanced_accuracy"] is not None),
+        key=lambda r: (r["balanced_accuracy"], -r["tau"]),
+    )["tau"]
 
 
 def run_place_only_knn(data_path, seed=42):
@@ -216,12 +180,19 @@ def run_place_only_knn(data_path, seed=42):
     return val["y"], scores
 
 
+def check_place_only(grid_rows):
+    """D6 guard: place-only KNN at tau=0.50 must match feature_groups.csv."""
+    with open(ROOT / "results" / "tables" / "feature_groups.csv", encoding="utf-8", newline="") as f:
+        expected = next(float(r["balanced_accuracy"]) for r in csv.DictReader(f)
+                        if r["method"] == "knn" and r["group"] == "place")
+    actual = next(r["balanced_accuracy"] for r in grid_rows if r["tau"] == 0.50)
+    if abs(actual - expected) > 1e-6:
+        raise ValueError(f"Place-only KNN at tau=0.50 gives {actual:.6f}, "
+                         f"feature_groups.csv says {expected:.6f}.")
+
+
 def format_row(tau, method, feature_set, n_eval, metrics, is_optimal):
     """Format a single output row with .6f float precision."""
-    _FLOAT_COLS = {
-        "accuracy", "balanced_accuracy", "macro_f1",
-        "precision", "recall", "f1", "roc_auc",
-    }
     row = {
         "tau": f"{tau:.2f}",
         "method": method,
@@ -264,7 +235,7 @@ def run_threshold_tuning(scores_path, data_path, output, seed=42,
         feature_set = "main"
 
         grid_rows = sweep(y_true, scores)
-        best_tau, _, _, _ = select_optimal(grid_rows)
+        best_tau = select_optimal(grid_rows)
 
         for gr in grid_rows:
             tau = gr["tau"]
@@ -278,7 +249,8 @@ def run_threshold_tuning(scores_path, data_path, output, seed=42,
         y_true, place_scores = run_place_only_knn(data_path, seed=seed)
         n_eval_place = len(y_true)
         grid_rows = sweep(y_true, place_scores)
-        best_tau, _, _, _ = select_optimal(grid_rows)
+        check_place_only(grid_rows)
+        best_tau = select_optimal(grid_rows)
 
         for gr in grid_rows:
             tau = gr["tau"]
