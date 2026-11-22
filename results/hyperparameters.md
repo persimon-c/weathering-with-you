@@ -24,6 +24,46 @@ The baselines use the raw features, so the rain cutoff is in millimeters.
 
 The decision thresholds of logistic regression and KNN are not in the `hyperparameters` column because they are the 0.5 default. Tuning each method and its threshold on validation is planned for Milestone 4.
 
+## Decision thresholds (M4 validation tuning)
+
+Milestone 4 systematically tunes the classification decision threshold $\tau$ across the 2025 validation set with the frozen 1.0% flood threshold label. Preprocessing and model parameters remain fit on training data only.
+
+### Threshold grid
+
+An 18-point probability cutoff grid is evaluated:
+
+$$\tau \in \{0.02, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.90\}$$
+
+A sample is predicted flooded when $\hat{p} \ge \tau$.
+
+### Validation tuning results
+
+Optimal operating points selected by validation balanced accuracy (ties broken by lowest $\tau$):
+
+| Method | Feature Set | Default BalAcc ($\tau=0.50$) | Tuned $\tau^*$ | Tuned BalAcc | Recall | Precision | F1 | Notes |
+|---|---|---:|---:|---:|---:|---:|---:|---|
+| Place history | `place` (cell ID) | 0.781593 | **0.30** | **0.856608** | 0.831522 | 0.616935 | 0.708333 | Dominant benchmark; lowers FN from 68 to 31 |
+| Logistic regression | `place_weather_season` (15) | 0.707611 | **0.45** | **0.716786** | 0.733696 | 0.359043 | 0.482143 | Favorable recall trade-off (+13 TP for +42 FP) |
+| Gaussian Naive Bayes | `place_weather_season` (15) | 0.540372 | **0.05** | **0.659108** | 0.798913 | 0.275797 | 0.410042 | Low-$\tau$ optimum (GNB drops missing-soil flag, 14 effective); $\tau=0.10 \to 0.654739$ |
+| KNN ($k=5$) | `place_weather_season` (15) | 0.567485 | **0.02** | **0.664654** | 0.782609 | 0.283465 | 0.416185 | Plateau across $\tau \in [0.02, 0.20]$ from discrete votes |
+| *KNN ($k=5$, place-only)* | `place` (3) | *0.795238* | ***0.02*** | ***0.853670*** | *0.940217* | *0.480556* | *0.636029* | *Spatial-only KNN approaches Place History (evaluated via `--place-only` ablation; not in 72-row main table)* |
+
+Detailed per-threshold metrics and confusion matrices are saved in [`tables/threshold_tuning.csv`](tables/threshold_tuning.csv) and discussed in [`threshold_tuning.md`](threshold_tuning.md).
+
+### Budget parity
+
+Every tunable method receives equal search budget: exactly 18 probability threshold configurations. Total tuning evaluations: 4 tunable methods $\times$ 18 thresholds = 72 configurations.
+
+### Non-tunable methods
+
+- **Majority baseline:** Predicts all-dry. Exports training prevalence (0.169888); balanced accuracy is flat at 0.5000 across all $\tau$.
+- **Rain rule baseline:** Operates on a rainfall millimeter cutoff (50.98 mm, tuned on training data). Its exported scores are ranking-only atan transforms in $[0.905, 0.998]$; all grid thresholds predict all-positive ($\text{BalAcc}=0.5000$).
+
+### Descope and distance dilution notes
+
+- **$k=51$ descope:** $k=5$ was selected as the optimal neighborhood size in Milestone 3 validation. $k=51$ is intentionally descoped from the M4 grid.
+- **KNN distance dilution:** Comparing place-only KNN ($k=5$, BalAcc 0.7952 at $\tau=0.50$; 0.8537 at $\tau^*=0.02$) with full-feature KNN ($k=5$, BalAcc 0.5675 at $\tau=0.50$; 0.6647 at $\tau^*=0.02$) demonstrates that 9 noisy weather dimensions dilute the spatial Euclidean metric, confirming the domain finding under identical tuning.
+
 ## Feature-group experiment
 
 `scripts/run_feature_groups.py` reuses the same training and validation split and the same training-only preprocessing. The feature groups are selected after preprocessing, from the 15-column processed matrix, so `soil_wetness_missing` is available. All nine rows use the settings above, seed 42, and the 2025 validation split. The `group` name is stored in each row's `hyperparameters` JSON, and the compact summary is in [`tables/feature_groups.csv`](tables/feature_groups.csv).

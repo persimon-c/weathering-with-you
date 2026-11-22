@@ -116,11 +116,23 @@ The processed dataset, `data/processed/flood_data.csv`, is already in the reposi
     ```
     python scripts/run_error_analysis.py
     ```
-11. Export validation predictions and generate all figures:
+11. Export validation predictions:
     ```
     python scripts/export_validation_scores.py
+    ```
+12. Tune classification decision thresholds across the 18-point $\tau$ grid (`results/tables/threshold_tuning.csv`):
+    ```
+    python scripts/run_threshold_tuning.py
+    ```
+13. Generate all figures:
+    ```
     python scripts/plot_results.py
     ```
+
+Alternatively, run the complete end-to-end reproduction pipeline and verify all artifact checksums with a single command:
+```bash
+python scripts/run_all.py
+```
 
 The runners append to `results/runs.csv` with the recording commit hash. The 2026 test set remains held out until Milestone 4.
 
