@@ -99,7 +99,7 @@ def read_per_cluster(path=None):
 # Figure 1 – ROC curves
 # ---------------------------------------------------------------------------
 
-def plot_roc_curves(scores_rows, output_path):
+def plot_roc_curves(scores_rows, output_path, title="ROC curves – 2025 validation"):
     """ROC curve of every method on 2025 validation."""
     fig, ax = plt.subplots(figsize=(7, 6))
 
@@ -130,7 +130,7 @@ def plot_roc_curves(scores_rows, output_path):
     ax.plot([0, 1], [0, 1], "k--", linewidth=0.8, label="Random (AUC = 0.500)")
     ax.set_xlabel("False positive rate")
     ax.set_ylabel("True positive rate")
-    ax.set_title("ROC curves – 2025 validation")
+    ax.set_title(title)
     ax.legend(loc="lower right", fontsize=8)
     ax.set_xlim(-0.02, 1.02)
     ax.set_ylim(-0.02, 1.02)
@@ -311,7 +311,7 @@ def plot_per_cluster(cluster_rows, output_path):
 # Figure 5 – Validation map
 # ---------------------------------------------------------------------------
 
-def plot_validation_map(scores_rows, output_path, method="place_history"):
+def plot_validation_map(scores_rows, output_path, method="place_history", title="Validation cells"):
     """Scatter map of validation cells colored by correct / FP / FN.
 
     Uses one method (default: place_history) for the classification outcome.
@@ -359,7 +359,7 @@ def plot_validation_map(scores_rows, output_path, method="place_history"):
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
     display = DISPLAY_NAMES.get(method, method)
-    ax.set_title(f"Validation cells – {display}")
+    ax.set_title(f"{title} – {display}")
     ax.legend(loc="lower left", fontsize=8)
     ax.set_aspect("equal")
     fig.tight_layout()
