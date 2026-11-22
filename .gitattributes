@@ -1,0 +1,3 @@
+# Generated tables are checksummed as LF; keep them LF on Windows checkouts too.
+results/tables/** text eol=lf
+results/predictions/** text eol=lf
