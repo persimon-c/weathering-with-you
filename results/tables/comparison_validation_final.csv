@@ -1,0 +1,5 @@
+method,tau,n_eval,n_clusters,balanced_accuracy,macro_f1,roc_auc,delta_balanced_accuracy,delta_balanced_accuracy_lo,delta_balanced_accuracy_hi,delta_balanced_accuracy_excludes_zero,delta_macro_f1,delta_macro_f1_lo,delta_macro_f1_hi,delta_macro_f1_excludes_zero,n_boot,seed
+place_history,0.30,987,5,0.856608,0.813311,0.906939,,,,,,,,,1000,0
+logistic,0.45,987,5,0.716786,0.638525,0.752382,-0.139822,-0.210357,-0.088106,true,-0.174785,-0.276815,-0.128033,true,1000,0
+naive_bayes,0.05,987,5,0.659108,0.536763,0.686590,-0.197500,-0.245936,-0.128935,true,-0.276547,-0.330192,-0.190865,true,1000,0
+knn,0.02,987,5,0.664654,0.550526,0.706556,-0.191953,-0.241919,-0.157362,true,-0.262784,-0.324733,-0.226307,true,1000,0

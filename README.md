@@ -124,7 +124,11 @@ The processed dataset, `data/processed/flood_data.csv`, is already in the reposi
     ```
     python scripts/run_threshold_tuning.py
     ```
-13. Generate all figures:
+13. Paired cluster-bootstrap 95% intervals against Place History (`results/tables/comparison_validation_final.csv`, see `results/bootstrap.md`):
+    ```
+    python scripts/run_bootstrap.py
+    ```
+14. Generate all figures:
     ```
     python scripts/plot_results.py
     ```

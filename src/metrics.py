@@ -1,4 +1,5 @@
 import math
+import random
 
 
 def confusion_matrix(y_true, y_pred):
@@ -204,3 +205,30 @@ def evaluate_by_cluster(y_true, y_pred, y_score, cluster_ids):
         "overall": overall,
         "clusters": clusters
     }
+
+
+def cluster_bootstrap(cluster_ids, statistic, n_boot=1000, seed=0):
+    """Resample whole clusters with replacement; return statistic(indices) per draw.
+
+    Each draw picks as many clusters as there are, so rows of one storm cluster
+    always stay together. Draws where statistic returns None (for example a
+    draw holding only one class) are skipped, so fewer than n_boot can return.
+    """
+    if not cluster_ids:
+        raise ValueError("Inputs cannot be empty.")
+
+    groups = {}
+    for i, cluster in enumerate(cluster_ids):
+        groups.setdefault(cluster, []).append(i)
+    groups = list(groups.values())
+
+    rng = random.Random(seed)
+    values = []
+
+    for _ in range(n_boot):
+        drawn = rng.choices(groups, k=len(groups))
+        value = statistic([i for group in drawn for i in group])
+        if value is not None:
+            values.append(value)
+
+    return values
