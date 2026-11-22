@@ -137,9 +137,9 @@ def main(argv=None):
                         help="score validation as a stand-in for test; never touches test")
     parser.add_argument("--out-dir", type=Path,
                         help="dry-run output folder (default: a new temp folder)")
-    parser.add_argument("--data", type=Path, default=ROOT / "data/processed/flood_data.csv")
-    parser.add_argument("--taus", type=Path, default=ROOT / "results/tables/threshold_tuning.csv")
     args = parser.parse_args(argv)
+    if args.out_dir and not args.dry_run:
+        parser.error("--out-dir needs --dry-run")
 
     if args.dry_run:
         out_dir = args.out_dir or Path(tempfile.mkdtemp(prefix="evaluate_test_dry_"))
@@ -152,9 +152,10 @@ def main(argv=None):
             print("Refusing to score the test set:", *problems, sep="\n  ", file=sys.stderr)
             return 1
 
-    splits = split_data(*load_data(args.data))
-    comparison, sizes, unseen = evaluate_split(splits["train"], splits[split],
-                                               load_taus(args.taus), paths, label)
+    # Fixed inputs: the real run must read only what the frozen commit holds.
+    splits = split_data(*load_data(ROOT / "data/processed/flood_data.csv"))
+    taus = load_taus(ROOT / "results/tables/threshold_tuning.csv")
+    comparison, sizes, unseen = evaluate_split(splits["train"], splits[split], taus, paths, label)
 
     n = sum(sizes.values())
     print(f"{label}: {n} rows, {unseen} in cells unseen in training")
