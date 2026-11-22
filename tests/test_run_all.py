@@ -42,8 +42,8 @@ class TestRunAll(unittest.TestCase):
             self.assertIn("pandas", mods)
 
     def test_compute_sha256(self):
-        with tempfile.NamedTemporaryFile("w+", delete=False) as f:
-            f.write("hello world\n")
+        with tempfile.NamedTemporaryFile("wb", delete=False) as f:
+            f.write(b"hello world\n")
             f.flush()
             temp_path = Path(f.name)
 
