@@ -78,10 +78,22 @@ def run_thresholds(data_path, output, seed=42):
         print(f"Completed {threshold:g}%: six validation methods", flush=True)
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
+    # Format float columns to fixed precision for cross-platform bit-reproducibility.
+    # Metric and share columns are rounded to 6 dp (matching compare.py / run_feature_groups.py).
+    _FLOAT_COLS = set(METRICS) | {
+        "train_flooded_share", "val_flooded_share", "test_flooded_share",
+    }
+    formatted = []
+    for row in rows:
+        formatted.append({
+            k: ("" if (k in _FLOAT_COLS and v is None)
+                else (f"{float(v):.6f}" if k in _FLOAT_COLS else v))
+            for k, v in row.items()
+        })
     with output.open("w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=FIELDS)
+        writer = csv.DictWriter(file, fieldnames=FIELDS, lineterminator="\n")
         writer.writeheader()
-        writer.writerows(rows)
+        writer.writerows(formatted)
     return rows
 
 

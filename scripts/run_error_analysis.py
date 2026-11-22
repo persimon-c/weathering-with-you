@@ -141,7 +141,7 @@ def summarize_errors(val, predictions):
                     **values,
                     "actual": actual,
                     "predicted": pred,
-                    "score": float(scores[i]),
+                    "score": f"{float(scores[i]):.10f}",
                     "error_type": outcome,
                 })
 
@@ -209,6 +209,7 @@ def run_error_analysis(data_path, output_dir, seed=42):
             writer = csv.DictWriter(
                 file,
                 fieldnames=fields,
+                lineterminator="\n",
             )
             writer.writeheader()
             writer.writerows(rows)

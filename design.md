@@ -205,8 +205,8 @@ The **2026 test set was not used for training, tuning, or scoring**. All explora
 | Milestone | Due | Must have | Owner |
 |---|---|---|---|
 | M2 | Thu 12 Nov | Download and pipeline code written from scratch, processed CSV, split, metrics, majority baseline, Naive Bayes and logistic regression with first validation results, problems and next plan, task log | Completed |
-| M3 | Thu 19 Nov | KNN, all metrics own-code, comparison tables and graphs, feature-group and threshold experiments | In progress |
-| M4 | Thu 26 Nov | Tuning on validation only, one test run, per-cluster results and intervals, complete project page | To assign |
+| M3 | Thu 19 Nov | KNN, all metrics own-code, comparison tables and graphs, feature-group and threshold experiments | Completed |
+| M4 | Thu 26 Nov | Tuning on validation only, one test run, per-cluster results and intervals, complete project page | In progress |
 | Presentation | To be announced | Slides, every member presents a part, page and repo frozen | All |
 
 If the full download is not finished for M2, build the CSV from the passes already downloaded, report results on those, and say so in the progress report.
