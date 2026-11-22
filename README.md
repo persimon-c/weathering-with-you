@@ -132,6 +132,11 @@ The processed dataset, `data/processed/flood_data.csv`, is already in the reposi
     ```
     python scripts/plot_results.py
     ```
+15. Final 2026 test run, once only. The script refuses before Tue 24 Nov 2026 18:00 PHT, off `main`, with a dirty tree, or once test outputs exist. `--dry-run` scores validation into a temp folder instead:
+    ```
+    python scripts/evaluate_test.py --dry-run
+    python scripts/evaluate_test.py
+    ```
 
 Alternatively, run the complete end-to-end reproduction pipeline and verify all artifact checksums with a single command:
 ```bash
