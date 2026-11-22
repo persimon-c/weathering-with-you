@@ -160,15 +160,8 @@ def run_unit_tests(root=ROOT):
     print("=" * 60)
     print("Running unit test suite...")
     print("=" * 60)
-    os.environ["RUN_ALL_ACTIVE"] = "1"
-    try:
-        loader = unittest.defaultTestLoader
-        suite = loader.discover(str(root / "tests"), pattern="test_*.py")
-        runner = unittest.TextTestRunner(verbosity=1)
-        result = runner.run(suite)
-        return result.wasSuccessful()
-    finally:
-        os.environ.pop("RUN_ALL_ACTIVE", None)
+    suite = unittest.defaultTestLoader.discover(str(root / "tests"), pattern="test_*.py")
+    return unittest.TextTestRunner(verbosity=1).run(suite).wasSuccessful()
 
 
 def get_git_commit(root=ROOT):
