@@ -591,7 +591,72 @@
                 performance across all future storms.
             </p>
 
-            <!-- Validation figures will be inserted here. -->
+        <h3>Validation Figures</h3>
+        <p>
+            The metric comparison, feature-group experiment, per-cluster
+            results, and spatial map below show the earlier evaluation
+            before decision threshold tuning. They provide context
+            alongside the tuned results above.
+        </p>
+
+        <figure>
+            <img
+                src="assets/roc_curves.png"
+                alt="ROC curves for six methods. Place History has the highest AUC at 0.907; the rainfall rule scores 0.512."
+                loading="lazy">
+            <figcaption>
+                Figure 1. ROC curves on the 2025 validation set.
+                Place History provides the strongest score ranking.
+                ROC AUC does not depend on a single decision threshold.
+            </figcaption>
+        </figure>
+
+        <figure>
+            <img
+                src="assets/metric_bars.png"
+                alt="Balanced accuracy and macro F1 for six methods before probability threshold tuning. Place History achieves 0.782 balanced accuracy."
+                loading="lazy">
+            <figcaption>
+                Figure 2. Validation balanced accuracy and macro F1
+                before probability threshold tuning. These scores
+                differ from the tuned comparison above.
+            </figcaption>
+        </figure>
+
+        <figure>
+            <img
+                src="assets/feature_groups.png"
+                alt="Feature-group comparison for Naive Bayes, logistic regression, and KNN. KNN balanced accuracy falls from 0.795 with place features to 0.567 with all features."
+                loading="lazy">
+            <figcaption>
+                Figure 3. Feature-group ablation on validation data.
+                KNN performs better with place features alone than
+                with the full combination of place, weather, and season.
+            </figcaption>
+        </figure>
+
+        <figure>
+            <img
+                src="assets/per_cluster.png"
+                alt="Comparison of method performance across validation storm clusters 14 through 18."
+                loading="lazy">
+            <figcaption>
+                Figure 4. Validation performance by storm cluster.
+                Variation between clusters provides context that
+                an overall score can conceal.
+            </figcaption>
+        </figure>
+
+        <figure>
+            <img
+                src="assets/validation_map.png"
+                alt="Map of Place History validation predictions across the Philippines, distinguishing correct predictions, false positives, and false negatives."
+                loading="lazy">
+            <figcaption>
+                Figure 5. Spatial distribution of Place History
+                validation predictions and errors.
+            </figcaption>
+        </figure>
 
             <h3>Final Test Results</h3>
             <p>
@@ -601,7 +666,7 @@
                 after the authorized evaluation using frozen settings.
             </p>
         </section>
-        
+
         <section id="discussion">
             <h2>Discussion</h2>
         </section>
