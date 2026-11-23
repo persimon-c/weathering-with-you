@@ -198,6 +198,124 @@
 
         <section id="methods">
             <h2>Methods</h2>
+
+            <p>
+                We compare three baselines and three machine learning models.
+                The models, preprocessing, and evaluation metrics are implemented
+                from scratch using Python and NumPy.
+            </p>
+
+            <h3>Baselines</h3>
+            <div class="table-wrapper"
+                role="region"
+                aria-label="Baseline methods"
+                tabindex="0">
+                <table>
+                    <caption>Reference methods used to assess model performance</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Baseline</th>
+                            <th scope="col">Prediction rule</th>
+                            <th scope="col">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">Majority</th>
+                            <td>Always predicts not flooded.</td>
+                            <td>
+                                Shows why accuracy alone can be misleading
+                                with an imbalanced dataset.
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Rainfall cutoff</th>
+                            <td>
+                                Predicts flooded when 3-day rainfall exceeds
+                                50.98 mm, a cutoff selected on training data.
+                            </td>
+                            <td>Measures the predictive value of rainfall alone.</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Place history</th>
+                            <td>
+                                Uses each cell's historical flood rate from
+                                training data. Unseen cells use the overall
+                                training flood rate.
+                            </td>
+                            <td>
+                                Tests how much can be predicted from
+                                the place's previous observations.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Gaussian Naive Bayes</h3>
+            <p>
+                A probabilistic model that estimates a Gaussian distribution
+                for each feature within each class. It combines feature
+                likelihoods under the assumption that the features are
+                conditionally independent given the class.
+            </p>
+            <p>
+                \[
+                    P(y=c \mid \mathbf{x})
+                    \propto P(y=c)\prod_j P(x_j \mid y=c)
+                \]
+            </p>
+            <p>
+                Calculations use log probabilities for numerical stability.
+                The binary missing-soil-wetness indicator is excluded because
+                it caused near-zero-variance likelihood problems.
+            </p>
+
+            <h3>Logistic Regression</h3>
+            <p>
+                A linear classifier that maps a weighted combination of
+                features to a flood probability using the sigmoid function.
+            </p>
+            <p>
+                \[
+                    P(y=1 \mid \mathbf{x})
+                    = \frac{1}{1 + e^{-(\mathbf{w}^{T}\mathbf{x}+b)}}
+                \]
+            </p>
+            <p>
+                Training uses batch gradient descent, L2 regularization,
+                and balanced class weights to account for the smaller
+                flooded class.
+            </p>
+
+            <h3>K-Nearest Neighbors</h3>
+            <p>
+                An instance-based model that finds the nearest training rows
+                using Euclidean distance in standardized feature space.
+                Its flood probability is the fraction of those neighbors
+                labeled flooded.
+            </p>
+            <p>
+                \[
+                    \hat{p}(y=1 \mid \mathbf{x})
+                    = \frac{1}{k}
+                    \sum_{i \in \mathcal{N}_k(\mathbf{x})} y_i
+                \]
+            </p>
+            <p>
+                The comparison uses \(k=5\). Feature-group experiments
+                examine how adding weather and season changes the
+                neighborhoods selected by the model.
+            </p>
+
+            <h3>Why These Models?</h3>
+            <p>
+                Gaussian Naive Bayes tests a generative probabilistic approach,
+                logistic regression tests a linear decision boundary,
+                and KNN tests local similarity. Together, they help explain
+                how different model assumptions interact with geographic
+                and weather features.
+            </p>
         </section>
 
         <section id="experimental-setup">
