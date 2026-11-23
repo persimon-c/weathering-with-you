@@ -473,7 +473,92 @@
 
         <section id="results">
             <h2>Results</h2>
+        <h3>Baseline and Model Comparison</h3>
+        <p>
+            This comparison uses the original settings before probability
+            threshold tuning. Place History and the learned models use
+            a probability threshold of 0.50; the rainfall rule uses its
+            training-selected rainfall cutoff.
+        </p>
 
+        <div class="table-wrapper"
+            role="region"
+            aria-label="Comparison of all six methods before threshold tuning"
+            tabindex="0">
+            <table>
+                <caption>
+                    Performance on the 2025 validation set before
+                    probability threshold tuning
+                </caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Method</th>
+                        <th scope="col" class="numeric">Balanced accuracy</th>
+                        <th scope="col" class="numeric">Macro F1</th>
+                        <th scope="col" class="numeric">Precision</th>
+                        <th scope="col" class="numeric">Recall</th>
+                        <th scope="col" class="numeric">ROC AUC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="row">Majority</th>
+                        <td class="numeric">0.5000</td>
+                        <td class="numeric">0.4486</td>
+                        <td class="numeric">0.0000</td>
+                        <td class="numeric">0.0000</td>
+                        <td class="numeric">0.5000</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Rainfall Cutoff</th>
+                        <td class="numeric">0.5089</td>
+                        <td class="numeric">0.4842</td>
+                        <td class="numeric">0.1935</td>
+                        <td class="numeric">0.3913</td>
+                        <td class="numeric">0.5122</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Place History</th>
+                        <td class="numeric">0.7816</td>
+                        <td class="numeric">0.7900</td>
+                        <td class="numeric">0.6824</td>
+                        <td class="numeric">0.6304</td>
+                        <td class="numeric">0.9069</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Gaussian Naive Bayes</th>
+                        <td class="numeric">0.5404</td>
+                        <td class="numeric">0.5428</td>
+                        <td class="numeric">0.2734</td>
+                        <td class="numeric">0.2065</td>
+                        <td class="numeric">0.6866</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Logistic Regression</th>
+                        <td class="numeric">0.7076</td>
+                        <td class="numeric">0.6527</td>
+                        <td class="numeric">0.3801</td>
+                        <td class="numeric">0.6630</td>
+                        <td class="numeric">0.7524</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">KNN (k = 5)</th>
+                        <td class="numeric">0.5675</td>
+                        <td class="numeric">0.5764</td>
+                        <td class="numeric">0.4595</td>
+                        <td class="numeric">0.1848</td>
+                        <td class="numeric">0.7066</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p>
+            Source:
+            <a href="https://github.com/persimon-c/weathering-with-you/blob/main/results/tables/comparison_main.csv">
+                Original validation comparison CSV
+            </a>.
+        </p>
             <h3>Tuned Validation Results</h3>
             <p>
                 Results below use the 2025 validation set: 987 rows
