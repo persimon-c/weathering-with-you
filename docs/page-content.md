@@ -189,7 +189,7 @@ Confidence intervals are formed using the empirical 2.5th and 97.5th percentiles
 
 ### 5.3 Final Test Set Results (2026 Split, $N=578$)
 
-> **Status:** The 2026 test set was held strictly unblinded during all design, training, tuning, and ablation phases. The final test evaluation protocol (`scripts/run_test_evaluation.py`) is scheduled to execute once the page structure is integrated.
+> **Status:** The 2026 test set remains held out from model development. Final evaluation uses `scripts/evaluate_test.py`, gated until November 24, 2026 at 18:00 PHT, on main with a clean working tree and frozen settings.
 
 *(Pre-drafted reporting table for upcoming test unblinding)*
 
@@ -234,7 +234,7 @@ As recorded in `design.md` (§Limitations), this study operates under five criti
 
 ## 7. Conclusion
 
-This project implemented a transparent, reproducible, and dependency-free machine learning benchmark for satellite-derived flood extent prediction in the Philippines.
+This project implemented a transparent, reproducible machine learning benchmark for satellite-derived flood extent prediction in the Philippines, using Python and NumPy with algorithms implemented from scratch.
 
 ### Key Takeaways
 1. **Topography Trumps Weather:** Static location and terrain elevation govern flood inundation far more than pre-pass precipitation sums. Historical cell flood rate is the single strongest predictor.
@@ -261,4 +261,4 @@ In accordance with course academic integrity policies, generative AI assistants 
 
 - **Source Code & Repository:** [https://github.com/persimon-c/weathering-with-you](https://github.com/persimon-c/weathering-with-you)
 - **Live Project Webpage:** [https://persimon-c.github.io/weathering-with-you](https://persimon-c.github.io/weathering-with-you)
-- **Presentation Slide Deck:** Available in repository at `slides/final.pdf` (or via GitHub Release).
+- **Presentation Slide Deck:** Pending; the planned repository location is `docs/slides.pdf`.
