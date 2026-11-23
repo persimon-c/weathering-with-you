@@ -75,9 +75,9 @@ Qlyve
 
 
 Carlos
-- built the project page structure, hero, member information and navigation (#47)
-- added responsive dark styling, table and figure styles, keyboard skip link, footer and MathJax
-- content integration, final checks and deployment remain pending
+- built the responsive project page, navigation, branding and MathJax setup (#47)
+- integrated research content, validation tables, figures and references
+- final test results and deployment remain pending
 
 Nicholas
 
