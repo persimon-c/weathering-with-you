@@ -473,8 +473,135 @@
 
         <section id="results">
             <h2>Results</h2>
-        </section>
 
+            <h3>Tuned Validation Results</h3>
+            <p>
+                Results below use the 2025 validation set: 987 rows
+                across five storm clusters. Each method's probability
+                threshold was selected using validation balanced accuracy,
+                so these scores reflect tuning on this split.
+            </p>
+
+            <div class="table-wrapper"
+                role="region"
+                aria-label="Tuned validation results"
+                tabindex="0">
+                <table>
+                    <caption>
+                        Validation performance after decision threshold tuning.
+                        Higher metric values are better.
+                    </caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Method</th>
+                            <th scope="col" class="numeric">Threshold</th>
+                            <th scope="col" class="numeric">Balanced accuracy</th>
+                            <th scope="col" class="numeric">Macro F1</th>
+                            <th scope="col" class="numeric">ROC AUC</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">Place History</th>
+                            <td class="numeric">0.30</td>
+                            <td class="numeric">0.8566</td>
+                            <td class="numeric">0.8133</td>
+                            <td class="numeric">0.9069</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Logistic Regression</th>
+                            <td class="numeric">0.45</td>
+                            <td class="numeric">0.7168</td>
+                            <td class="numeric">0.6385</td>
+                            <td class="numeric">0.7524</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">KNN (k = 5)</th>
+                            <td class="numeric">0.02</td>
+                            <td class="numeric">0.6647</td>
+                            <td class="numeric">0.5505</td>
+                            <td class="numeric">0.7066</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Gaussian Naive Bayes</th>
+                            <td class="numeric">0.05</td>
+                            <td class="numeric">0.6591</td>
+                            <td class="numeric">0.5368</td>
+                            <td class="numeric">0.6866</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p>
+                Source:
+                <a href="https://github.com/persimon-c/weathering-with-you/blob/main/results/tables/comparison_validation_final.csv">
+                    Tuned validation comparison CSV
+                </a>.
+                Majority and rainfall-cutoff baselines are reported separately
+                in the default comparison.
+            </p>
+
+            <h3>Paired Differences Against Place History</h3>
+            <p>
+                Differences subtract Place History's score from each learned
+                model's score. Negative values favor Place History.
+            </p>
+
+            <div class="table-wrapper"
+                role="region"
+                aria-label="Paired validation differences and confidence intervals"
+                tabindex="0">
+                <table>
+                    <caption>
+                        Paired metric differences with 95% cluster-bootstrap
+                        intervals, using 1,000 draws
+                    </caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Method</th>
+                            <th scope="col">Δ balanced accuracy [95% CI]</th>
+                            <th scope="col">Δ macro F1 [95% CI]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">Logistic Regression</th>
+                            <td>−0.140 [−0.210, −0.088]</td>
+                            <td>−0.175 [−0.277, −0.128]</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">KNN (k = 5)</th>
+                            <td>−0.192 [−0.242, −0.157]</td>
+                            <td>−0.263 [−0.325, −0.226]</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Gaussian Naive Bayes</th>
+                            <td>−0.198 [−0.246, −0.129]</td>
+                            <td>−0.277 [−0.330, −0.191]</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p>
+                All reported intervals lie below zero on this validation
+                split. Their interpretation is limited by the five storm
+                clusters and their unequal sizes; they do not establish
+                performance across all future storms.
+            </p>
+
+            <!-- Validation figures will be inserted here. -->
+
+            <h3>Final Test Results</h3>
+            <p>
+                <strong>Pending final evaluation.</strong>
+                The 2026 test split contains 578 rows across three storm
+                clusters. Final test scores and figures will be added
+                after the authorized evaluation using frozen settings.
+            </p>
+        </section>
+        
         <section id="discussion">
             <h2>Discussion</h2>
         </section>
