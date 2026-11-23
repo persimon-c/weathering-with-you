@@ -975,5 +975,99 @@
     </p>
     <a href="#hero">Back to top ↑</a>
 </footer>
+
+<script>
+    const navigation = document.querySelector("nav");
+    const sectionLinks = [
+        ...navigation.querySelectorAll('a[href^="#"]:not(.nav-brand)')
+    ];
+    const linkedSections = sectionLinks.map(link =>
+        document.querySelector(link.getAttribute("href"))
+    );
+
+    let clickedSection = null;
+    let scrollTimer;
+    let updatePending = false;
+
+    function highlightLink(section) {
+        for (const link of sectionLinks) {
+            const active =
+                section &&
+                link.getAttribute("href") === "#" + section.id;
+
+            if (active) {
+                link.setAttribute("aria-current", "location");
+            } else {
+                link.removeAttribute("aria-current");
+            }
+        }
+    }
+
+    function updateCurrentSection() {
+        updatePending = false;
+
+        if (clickedSection) {
+            return;
+        }
+
+        const marker = navigation.getBoundingClientRect().bottom + 32;
+        let currentSection = null;
+
+        for (const section of linkedSections) {
+            if (section && section.getBoundingClientRect().top <= marker) {
+                currentSection = section;
+            }
+        }
+
+        const atBottom =
+            window.scrollY + window.innerHeight >=
+            document.documentElement.scrollHeight - 4;
+
+        if (atBottom) {
+            currentSection = linkedSections[linkedSections.length - 1];
+        }
+
+        highlightLink(currentSection);
+    }
+
+    function releaseClickHighlight() {
+        clickedSection = null;
+        updateCurrentSection();
+    }
+
+    for (const link of sectionLinks) {
+        link.addEventListener("click", event => {
+            if (
+                event.ctrlKey || event.metaKey ||
+                event.shiftKey || event.altKey
+            ) {
+                return;
+            }
+
+            clickedSection = document.querySelector(
+                link.getAttribute("href")
+            );
+            highlightLink(clickedSection);
+
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(releaseClickHighlight, 250);
+        });
+    }
+
+    window.addEventListener("scroll", () => {
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(releaseClickHighlight, 150);
+
+        if (!updatePending) {
+            updatePending = true;
+            requestAnimationFrame(updateCurrentSection);
+        }
+    }, { passive: true });
+
+    window.addEventListener("resize", updateCurrentSection);
+    window.addEventListener("load", updateCurrentSection);
+
+    updateCurrentSection();
+</script>
 </body>
 </html>

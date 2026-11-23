@@ -436,3 +436,54 @@ footer a {
         scroll-behavior: auto;
     }
 }
+
+/* Refined top navigation */
+nav {
+    gap: 0.35rem;
+    padding-block: 0.65rem;
+    background: #10192a;
+    border-bottom-color: #34445c;
+    box-shadow: 0 6px 24px #00000030;
+}
+
+nav .nav-brand {
+    gap: 0.8rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.brand-symbol {
+    width: 42px;
+    height: 42px;
+    padding: 7px;
+    border: 1px solid #7dd3fc33;
+    border-radius: 12px;
+    background: #7dd3fc0d;
+}
+
+nav > a:not(.nav-brand) {
+    min-height: 40px;
+    border: 1px solid transparent;
+    font-weight: 500;
+    transition:
+        color 150ms ease,
+        background-color 150ms ease;
+}
+
+nav > a:not(.nav-brand):hover {
+    background: #ffffff08;
+    color: var(--text);
+}
+
+nav a[aria-current="location"] {
+    border-color: #7dd3fc33;
+    background: #7dd3fc12;
+    color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    nav > a:not(.nav-brand) {
+        transition: none;
+    }
+}
