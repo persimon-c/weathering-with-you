@@ -986,16 +986,14 @@
     );
 
     let clickedSection = null;
-    let scrollTimer;
     let updatePending = false;
 
     function highlightLink(section) {
         for (const link of sectionLinks) {
-            const active =
+            if (
                 section &&
-                link.getAttribute("href") === "#" + section.id;
-
-            if (active) {
+                link.getAttribute("href") === "#" + section.id
+            ) {
                 link.setAttribute("aria-current", "location");
             } else {
                 link.removeAttribute("aria-current");
@@ -1007,6 +1005,7 @@
         updatePending = false;
 
         if (clickedSection) {
+            highlightLink(clickedSection);
             return;
         }
 
@@ -1030,9 +1029,16 @@
         highlightLink(currentSection);
     }
 
-    function releaseClickHighlight() {
+    function scheduleUpdate() {
+        if (!updatePending) {
+            updatePending = true;
+            requestAnimationFrame(updateCurrentSection);
+        }
+    }
+
+    function resumeScrollTracking() {
         clickedSection = null;
-        updateCurrentSection();
+        scheduleUpdate();
     }
 
     for (const link of sectionLinks) {
@@ -1048,24 +1054,48 @@
                 link.getAttribute("href")
             );
             highlightLink(clickedSection);
-
-            clearTimeout(scrollTimer);
-            scrollTimer = setTimeout(releaseClickHighlight, 250);
         });
     }
 
-    window.addEventListener("scroll", () => {
-        clearTimeout(scrollTimer);
-        scrollTimer = setTimeout(releaseClickHighlight, 150);
+    /* Manual scrolling releases the clicked selection. */
+    window.addEventListener("wheel", resumeScrollTracking, {
+        passive: true
+    });
+    window.addEventListener("touchmove", resumeScrollTracking, {
+        passive: true
+    });
 
-        if (!updatePending) {
-            updatePending = true;
-            requestAnimationFrame(updateCurrentSection);
+    window.addEventListener("keydown", event => {
+        if (event.target.closest(
+            'input, textarea, select, [contenteditable="true"]'
+        )) {
+            return;
         }
-    }, { passive: true });
 
-    window.addEventListener("resize", updateCurrentSection);
-    window.addEventListener("load", updateCurrentSection);
+        const scrollKeys = [
+            "ArrowUp", "ArrowDown", "PageUp",
+            "PageDown", "Home", "End", " "
+        ];
+
+        if (scrollKeys.includes(event.key)) {
+            resumeScrollTracking();
+        }
+    });
+
+    /* Also support scrollbar dragging and other page interactions. */
+    window.addEventListener("pointerdown", event => {
+        if (!navigation.contains(event.target)) {
+            resumeScrollTracking();
+        }
+    });
+
+    document.querySelectorAll('a[href="#hero"]').forEach(link => {
+        link.addEventListener("click", resumeScrollTracking);
+    });
+
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", resumeScrollTracking);
+    window.addEventListener("load", scheduleUpdate);
 
     updateCurrentSection();
 </script>
