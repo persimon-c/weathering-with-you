@@ -24,12 +24,11 @@ body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont,
         "Segoe UI", sans-serif;
     font-size: 16px;
-    line-height: 1.8;
+    line-height: 1.65;
     -webkit-font-smoothing: antialiased;
 }
 
 header,
-nav,
 main,
 footer {
     width: min(calc(100% - 3rem), var(--content-width));
@@ -52,25 +51,19 @@ h1 {
 }
 
 h2 {
-    margin: 0 0 2rem;
+    margin: 0 0 1.25rem;
     font-size: clamp(1.8rem, 4vw, 2.4rem);
     letter-spacing: -0.035em;
 }
 
 h3 {
-    margin: 2.5rem 0 1rem;
+    margin: 1.5rem 0 0.65rem;
     font-size: 1.15rem;
     letter-spacing: -0.015em;
 }
 
 p {
-    margin: 0 0 1.25rem;
-}
-
-section p,
-section > ul,
-section > ol {
-    max-width: 76ch;
+    margin: 0 0 0.85rem;
 }
 
 strong {
@@ -100,7 +93,7 @@ ol {
 }
 
 li + li {
-    margin-top: 0.65rem;
+    margin-top: 0.35rem;
 }
 
 code {
@@ -112,9 +105,68 @@ code {
     overflow-wrap: anywhere;
 }
 
+/* Sticky navigation */
+nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    width: 100%;
+    padding: 0.75rem max(1.5rem, calc((100% - 1320px) / 2));
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border);
+    background: var(--background);
+    box-shadow: 0 4px 16px #00000020;
+}
+
+nav a {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    min-height: 44px;
+    padding: 0.45rem 0.75rem;
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+nav a:hover,
+nav a:focus-visible {
+    background: var(--surface);
+    color: var(--text);
+}
+
+nav .nav-brand {
+    gap: 0.75rem;
+    margin-right: auto;
+    padding-left: 0;
+    padding-right: 2rem;
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 750;
+}
+
+nav .nav-brand:hover {
+    background: transparent;
+    color: var(--accent);
+}
+
+.brand-symbol {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    color: var(--accent);
+}
+
 /* Hero */
-header {
-    padding-block: 5.5rem 3.5rem;
+#hero {
+    padding-block: 3.5rem;
+    border-bottom: 1px solid var(--border);
+    scroll-margin-top: 6rem;
 }
 
 .eyebrow {
@@ -174,37 +226,16 @@ header {
     color: var(--accent);
 }
 
-/* Navigation */
-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-    padding-block: 0.85rem;
-    border-block: 1px solid var(--border);
-}
-
-nav a {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    padding: 0.45rem 0.8rem;
-    border-radius: 6px;
-    color: var(--muted);
-    font-size: 0.85rem;
-    text-decoration: none;
-}
-
-nav a:hover,
-nav a:focus-visible {
-    background: var(--surface);
-    color: var(--text);
-}
-
 /* Sections */
 section {
-    padding-block: 4rem;
+    padding-block: 2.5rem;
     border-bottom: 1px solid var(--border);
-    scroll-margin-top: 2rem;
+    scroll-margin-top: 6rem;
+}
+
+section > ul,
+section > ol {
+    margin-block: 0.65rem 1rem;
 }
 
 section > :last-child {
@@ -212,9 +243,8 @@ section > :last-child {
 }
 
 blockquote {
-    max-width: 76ch;
-    margin: 1.5rem 0;
-    padding: 1.25rem 1.5rem;
+    margin: 1rem 0;
+    padding: 1rem 1.25rem;
     border-left: 3px solid var(--accent);
     border-radius: 0 8px 8px 0;
     background: var(--surface);
@@ -224,7 +254,7 @@ blockquote {
 
 /* Tables */
 .table-wrapper {
-    margin-block: 1.5rem;
+    margin-block: 1rem;
     overflow-x: auto;
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -250,7 +280,7 @@ thead {
 
 th,
 td {
-    padding: 0.9rem 1.15rem;
+    padding: 0.65rem 0.9rem;
     border-bottom: 1px solid var(--border);
     text-align: left;
     vertical-align: top;
@@ -278,9 +308,9 @@ tbody tr:hover {
     white-space: nowrap;
 }
 
-/* Figures */
+/* Figures and equations */
 figure {
-    margin: 2.5rem 0;
+    margin: 1.5rem 0;
     padding: 1rem;
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -299,8 +329,7 @@ figure img {
 }
 
 figcaption {
-    max-width: 85ch;
-    margin: 1rem auto 0;
+    margin-top: 0.65rem;
     padding-inline: 0.25rem;
     color: var(--muted);
     font-size: 0.85rem;
@@ -309,9 +338,10 @@ figcaption {
 
 mjx-container[display="true"] {
     max-width: 100%;
+    margin-block: 0.75rem !important;
+    padding-block: 0.25rem;
     overflow-x: auto;
     overflow-y: hidden;
-    padding-block: 0.75rem;
 }
 
 /* References and footer */
@@ -340,7 +370,7 @@ footer a {
     position: absolute;
     top: 1rem;
     left: 1rem;
-    z-index: 10;
+    z-index: 200;
     padding: 0.75rem 1rem;
     border-radius: 6px;
     background: var(--accent);
@@ -353,123 +383,7 @@ footer a {
     transform: translateY(0);
 }
 
-/* Smaller screens */
-@media (max-width: 640px) {
-    header,
-    nav,
-    main,
-    footer {
-        width: calc(100% - 2rem);
-    }
-
-    header {
-        padding-block: 3.5rem 2.5rem;
-    }
-
-    section {
-        padding-block: 2.75rem;
-    }
-
-    .team {
-        flex-direction: column;
-    }
-
-    nav a {
-        padding-inline: 0.65rem;
-    }
-
-    th,
-    td {
-        padding: 0.75rem;
-    }
-
-    figure {
-        padding: 0.65rem;
-    }
-
-    blockquote {
-        padding: 1rem;
-    }
-}
-
-/* Sticky section navigation */
-nav {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    width: 100%;
-    padding: 0.65rem max(1rem, calc((100% - var(--content-width)) / 2));
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    background: var(--background);
-    box-shadow: 0 4px 16px #00000020;
-}
-
-nav a {
-    flex-shrink: 0;
-}
-
-/* Keep section headings visible below the menu */
-section,
-header {
-    scroll-margin-top: 6rem;
-}
-
-#hero {
-    border-bottom: 1px solid var(--border);
-}
-
-/* Project identity */
-nav {
-    align-items: center;
-}
-
-nav .nav-brand {
-    gap: 0.65rem;
-    margin-right: auto;
-    padding-left: 0;
-    padding-right: 1.5rem;
-    color: var(--text);
-    font-size: 1rem;
-    font-weight: 750;
-    letter-spacing: 0.06em;
-}
-
-nav .nav-brand:hover {
-    background: transparent;
-    color: var(--accent);
-}
-
-.brand-symbol {
-    width: 36px;
-    height: 36px;
-    flex-shrink: 0;
-    color: var(--accent);
-}
-
-/* Give the top bar more room than the article */
-nav {
-    padding: 0.75rem max(1.5rem, calc((100% - 1320px) / 2));
-    gap: 0.25rem;
-}
-
-nav .nav-brand {
-    gap: 0.75rem;
-    padding-right: 2rem;
-    font-size: 0.95rem;
-    letter-spacing: 0;
-    white-space: nowrap;
-}
-
-nav a {
-    padding-inline: 0.75rem;
-}
-
-/* Reduce excess space above the hero */
-#hero {
-    padding-top: 3.5rem;
-}
-
+/* Responsive layout */
 @media (max-width: 1100px) {
     nav {
         padding-inline: 1rem;
@@ -485,8 +399,35 @@ nav a {
 }
 
 @media (max-width: 640px) {
+    header,
+    main,
+    footer {
+        width: calc(100% - 2rem);
+    }
+
     #hero {
-        padding-top: 2.5rem;
+        padding-block: 2.5rem;
+    }
+
+    section {
+        padding-block: 2rem;
+    }
+
+    .team {
+        flex-direction: column;
+    }
+
+    th,
+    td {
+        padding: 0.65rem;
+    }
+
+    figure {
+        padding: 0.65rem;
+    }
+
+    blockquote {
+        padding: 1rem;
     }
 }
 
