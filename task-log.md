@@ -65,3 +65,19 @@ Nicholas
 - found the Naive Bayes missing-soil flag issue and fixed it in the shared preprocessing (#37)
 - reviewed #33 to #36 and #38, fixed the merge conflicts in #35 and #36, moved #34 to the shared setup, and merged them
 - checked main against the milestone 3 requirements and fixed three doc details (#41)
+
+## Milestone 4
+
+Simone
+
+
+Qlyve
+
+
+Carlos
+- built the project page structure, hero, member information and navigation (#47)
+- added responsive dark styling, table and figure styles, keyboard skip link, footer and MathJax
+- content integration, final checks and deployment remain pending
+
+Nicholas
+
