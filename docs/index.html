@@ -320,6 +320,155 @@
 
         <section id="experimental-setup">
             <h2>Experimental Setup</h2>
+
+            <h3>Temporal Split</h3>
+            <p>
+                Data are separated by year. Passes from the same storm
+                cluster remain in one split to reduce leakage between
+                training and evaluation. A storm cluster groups passes
+                no more than seven days apart.
+            </p>
+
+            <div class="table-wrapper"
+                role="region"
+                aria-label="Training validation and test splits"
+                tabindex="0">
+                <table>
+                    <caption>Frozen year-based data splits</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Split</th>
+                            <th scope="col">Years</th>
+                            <th scope="col" class="numeric">Rows</th>
+                            <th scope="col" class="numeric">Passes</th>
+                            <th scope="col" class="numeric">Storm clusters</th>
+                            <th scope="col">Use</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">Training</th>
+                            <td>2022–2024</td>
+                            <td class="numeric">1,966</td>
+                            <td class="numeric">33</td>
+                            <td class="numeric">13</td>
+                            <td>Fit models and preprocessing</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Validation</th>
+                            <td>2025</td>
+                            <td class="numeric">987</td>
+                            <td class="numeric">16</td>
+                            <td class="numeric">5</td>
+                            <td>Select model settings and decision thresholds</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Test</th>
+                            <td>2026</td>
+                            <td class="numeric">578</td>
+                            <td class="numeric">12</td>
+                            <td class="numeric">3</td>
+                            <td>Final evaluation after settings are frozen</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Preprocessing</h3>
+            <ol>
+                <li>
+                    <strong>Impute missing values:</strong>
+                    fill missing soil wetness using the training median.
+                    Soil wetness is missing in 164 dataset rows.
+                </li>
+                <li>
+                    <strong>Track missingness:</strong>
+                    add a binary <code>soil_wetness_missing</code>
+                    indicator for logistic regression and KNN.
+                    Gaussian Naive Bayes excludes this indicator.
+                </li>
+                <li>
+                    <strong>Standardize inputs:</strong>
+                    fit preprocessing statistics on training rows and
+                    reuse them for validation and test data.
+                </li>
+            </ol>
+
+            <p>
+                \[
+                    z = \frac{x - \mu_{\mathrm{train}}}
+                            {\sigma_{\mathrm{train}}}
+                \]
+            </p>
+
+            <h3>Decision Threshold Tuning</h3>
+            <p>
+                The flood-area threshold defining the label remains fixed
+                at 1%. Separately, the probability threshold
+                \(\tau\) determines whether a model's score becomes
+                a positive prediction.
+            </p>
+            <p>
+                Decision thresholds are selected using validation balanced
+                accuracy over an 18-point grid from 0.02 to 0.90.
+                Ties favor the lower threshold.
+                Test results are not used to select settings.
+            </p>
+
+            <h3>Evaluation Metrics</h3>
+            <ul>
+                <li>
+                    <strong>Balanced accuracy:</strong>
+                    the average of recall and specificity.
+                </li>
+                <li>
+                    <strong>Macro F1:</strong>
+                    the unweighted average of F1 for the two classes.
+                </li>
+                <li>
+                    <strong>Precision and recall:</strong>
+                    measure false-alarm burden and detection of flooded rows.
+                </li>
+                <li>
+                    <strong>ROC AUC:</strong>
+                    measures score ranking across decision thresholds.
+                </li>
+                <li>
+                    <strong>Confusion matrix:</strong>
+                    records true positives, true negatives,
+                    false positives, and false negatives.
+                </li>
+            </ul>
+
+            <p>
+                \[
+                    \text{Balanced Accuracy}
+                    = \frac{\text{Recall} + \text{Specificity}}{2}
+                \]
+            </p>
+
+            <h3>Cluster Bootstrap and Per-Cluster Evaluation</h3>
+            <p>
+                Validation uncertainty is summarized using 1,000 bootstrap
+                draws with seed 0. Each draw resamples whole storm clusters
+                with replacement. Learned methods and Place History use
+                the same sampled clusters to calculate paired differences.
+            </p>
+
+            <p>
+                \[
+                    \Delta M
+                    = M_{\mathrm{learned}} - M_{\mathrm{place\ history}}
+                \]
+            </p>
+
+            <p>
+                The 2.5th and 97.5th percentiles form the reported 95%
+                intervals. Negative differences favor Place History.
+                Because validation contains only five storm clusters
+                with unequal sizes, these intervals are a secondary
+                summary; per-cluster results provide essential context.
+            </p>
         </section>
 
         <section id="results">
