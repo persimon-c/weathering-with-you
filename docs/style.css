@@ -392,6 +392,29 @@ footer a {
     }
 }
 
+/* Sticky section navigation */
+nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    width: 100%;
+    padding: 0.65rem max(1rem, calc((100% - var(--content-width)) / 2));
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    background: var(--background);
+    box-shadow: 0 4px 16px #00000020;
+}
+
+nav a {
+    flex-shrink: 0;
+}
+
+/* Keep section headings visible below the menu */
+section,
+header {
+    scroll-margin-top: 6rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
     html {
         scroll-behavior: auto;
