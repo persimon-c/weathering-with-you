@@ -669,10 +669,114 @@
 
         <section id="discussion">
             <h2>Discussion</h2>
+
+            <h3>Place History Provides the Strongest Baseline</h3>
+            <p>
+                On the 2025 validation split, Place History achieves
+                0.8566 tuned balanced accuracy and 0.9069 ROC AUC.
+                The rainfall-only rule achieves 0.5089 balanced accuracy
+                and 0.5122 ROC AUC.
+            </p>
+            <p>
+                Together with the feature-group experiment, these results
+                suggest that repeated observations of the same places
+                provide more predictive information than the weather
+                features used here. This finding applies to this dataset
+                and evaluation setup; it does not imply that rainfall
+                is unimportant to the physical causes of flooding.
+            </p>
+
+            <h3>Model Geometry Limits Spatial Predictions</h3>
+            <p>
+                Gaussian Naive Bayes fits independent Gaussian distributions
+                to features within each class. These assumptions restrict
+                its ability to represent fragmented geographic patterns
+                and dependencies between location and elevation.
+            </p>
+            <p>
+                Logistic regression learns a linear boundary in feature
+                space. Elevation can help separate lower and higher terrain,
+                but a linear boundary cannot directly outline irregular,
+                disconnected flood-prone areas.
+            </p>
+
+            <h3>Additional Features Can Weaken KNN Neighborhoods</h3>
+            <p>
+                KNN reaches approximately 0.795 validation balanced accuracy
+                using place features alone, compared with 0.567 using the
+                full feature set before threshold tuning.
+            </p>
+            <p>
+                Repeated observations of the same cell are close in place
+                feature space. Adding weather dimensions changes those
+                distances and can select geographically different neighbors.
+                This offers an explanation for the observed decline;
+                adding more features does not automatically improve
+                prediction.
+            </p>
+
+            <h3>Limitations</h3>
+            <ol>
+                <li>
+                    <strong>Labels are not ground-checked.</strong>
+                    PhilSA's satellite-derived detections may underestimate
+                    floods in cities and dense vegetation.
+                </li>
+                <li>
+                    <strong>Rice-paddy water can be detected as flooding.</strong>
+                    Labels can reflect agricultural seasons as well as storms.
+                </li>
+                <li>
+                    <strong>Weather inputs are coarse.</strong>
+                    NASA POWER uses a 0.5° × 0.625° model grid rather than
+                    local rain-gauge observations.
+                </li>
+                <li>
+                    <strong>Some cells are only partly observed.</strong>
+                    Cells near satellite-pass boundaries have incomplete
+                    coverage, affecting measured flood share.
+                </li>
+                <li>
+                    <strong>The test sample contains few storms.</strong>
+                    The 2026 split has only three storm clusters, limiting
+                    the range of conditions represented.
+                </li>
+            </ol>
         </section>
 
         <section id="conclusion">
             <h2>Conclusion</h2>
+
+            <p>
+                We implemented three machine learning models and three
+                baselines from scratch to study satellite-derived flood
+                labels in the Philippines.
+                On validation data, historical flood rates by cell
+                outperform the learned models, while the tested weather
+                features provide limited additional predictive value.
+            </p>
+
+            <p>
+                The experiments demonstrate the importance of strong
+                domain baselines, feature selection, and evaluation
+                by storm cluster. They also show why high overall
+                accuracy can conceal poor detection of the flooded class.
+            </p>
+
+            <p>
+                Final conclusions about performance on the held-out
+                2026 year will be updated after the authorized test
+                evaluation.
+            </p>
+
+            <h3>Future Work</h3>
+            <p>
+                Future experiments could evaluate higher-resolution terrain
+                and weather inputs, hydrological features, weighted KNN
+                distances, and performance on previously unseen places.
+                More independent storm observations would strengthen
+                the assessment of generalization.
+            </p>
         </section>
 
         <section id="references">
