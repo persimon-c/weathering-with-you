@@ -49,13 +49,152 @@
     <a href="#links">Links</a>
 </nav>
     <main id="main-content" tabindex="-1">
-        <section id="introduction">
-            <h2>Introduction</h2>
-        </section>
+    <section id="introduction">
+        <h2>Introduction</h2>
 
-        <section id="data">
-            <h2>Data</h2>
-        </section>
+        <p>
+            Tropical cyclones and the southwest monsoon repeatedly cause
+            flooding across the Philippines. The Philippine Space Agency
+            (PhilSA) publishes satellite-derived flood extent maps after
+            these events. This project investigates whether location,
+            weather before a satellite pass, and season can help predict
+            which geographic cells are classified as flooded.
+        </p>
+
+        <h3>Research Question</h3>
+        <blockquote>
+            How well can we predict which areas flood in a new storm,
+            and how much does weather before the storm add beyond
+            the place itself?
+        </blockquote>
+
+        <p>
+            We compare three machine learning algorithms implemented
+            from scratch using NumPy against three baselines.
+            Training, validation, and test data are separated by year,
+            keeping passes from the same storm cluster together.
+        </p>
+    </section>
+
+    <section id="data">
+        <h2>Data</h2>
+
+        <h3>Sources and Credits</h3>
+        <ul>
+            <li>
+                <strong>Flood labels:</strong>
+                PhilSA Sentinel-1 flood extent maps from the
+                <a href="https://data.humdata.org/organization/philsa">
+                    Humanitarian Data Exchange
+                </a>, licensed under Creative Commons Attribution.
+                Credit: Philippine Space Agency (PhilSA), via the
+                Humanitarian Data Exchange.
+            </li>
+            <li>
+                <strong>Weather and elevation:</strong>
+                <a href="https://power.larc.nasa.gov/">NASA POWER</a>
+                daily point API. Credit: NASA POWER Project.
+            </li>
+        </ul>
+
+        <h3>Dataset</h3>
+        <div class="table-wrapper"
+            role="region"
+            aria-label="Dataset specifications"
+            tabindex="0">
+            <table>
+                <caption>Processed dataset overview</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Property</th>
+                        <th scope="col">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="row">Satellite</th>
+                        <td>Sentinel-1 synthetic aperture radar</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Acquisitions</th>
+                        <td>61 passes from 63 shapefiles</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Period</th>
+                        <td>August 2022–September 2026</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Observations</th>
+                        <td>3,531 cell-pass rows across 253 cells</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Cell size</th>
+                        <td>0.5° × 0.5°</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Row selection</th>
+                        <td>
+                            One satellite pass in a cell containing
+                            at least one mapped flood polygon
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Inputs</th>
+                        <td>
+                            14 features, plus a missing-soil-wetness
+                            indicator excluded from Gaussian Naive Bayes
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>Features</h3>
+        <ul>
+            <li>
+                <strong>Place:</strong>
+                latitude, longitude, and elevation.
+            </li>
+            <li>
+                <strong>Weather:</strong>
+                rainfall totals over 1, 3, 7, 14, 21, and 30 days;
+                relative humidity, temperature, and root-zone soil wetness.
+            </li>
+            <li>
+                <strong>Season:</strong>
+                <code>month_sin</code> and <code>month_cos</code>
+                encode the month cyclically.
+            </li>
+        </ul>
+
+        <p>
+            Weather windows end the day before the satellite pass.
+            No flood-map measurements are used as input features.
+        </p>
+
+        <h3>Flood Label</h3>
+        <p>
+            A cell-pass row is labeled flooded when the detected flooded
+            area exceeds 1% of the cell's total area. Exactly 1% is
+            classified as not flooded.
+        </p>
+
+        <p>
+            \[
+                y =
+                \begin{cases}
+                    1, &amp; \text{if flood share exceeds 1 percent} \\
+                    0, &amp; \text{otherwise}
+                \end{cases}
+            \]
+        </p>
+
+        <p>
+            This threshold distinguishes substantial detected flooding
+            from small amounts of mapped water. Sensitivity experiments
+            also evaluate thresholds of 0.5% and 2%.
+        </p>
+    </section>
 
         <section id="methods">
             <h2>Methods</h2>
