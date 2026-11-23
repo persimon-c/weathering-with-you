@@ -104,6 +104,51 @@ nav a:focus-visible {
     color: var(--text);
 }
 
+.eyebrow {
+    color: var(--accent);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.hero-description {
+    max-width: 650px;
+    font-size: clamp(1.1rem, 3vw, 1.35rem);
+}
+
+.affiliation {
+    font-size: 0.95rem;
+}
+
+.team {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    margin-block: 1.5rem 2rem;
+    padding: 0;
+    list-style: none;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.button {
+    display: inline-block;
+    padding: 0.75rem 1.25rem;
+    border: 1px solid var(--accent);
+    border-radius: 0.5rem;
+    background: var(--accent);
+    color: var(--background);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.button:hover {
+    background: var(--surface);
+    color: var(--accent);
+}
+
+
 @media (prefers-reduced-motion: reduce) {
     html {
         scroll-behavior: auto;
