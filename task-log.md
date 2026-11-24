@@ -75,6 +75,7 @@ Simone
 
 
 Qlyve
+- helped draft and refine the research content presented on the project page (#47)
 
 
 Carlos
