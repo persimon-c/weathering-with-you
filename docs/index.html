@@ -780,13 +780,136 @@
             </figcaption>
         </figure>
 
-            <h3>Final Test Results</h3>
-            <p>
-                <strong>Pending final evaluation.</strong>
-                The 2026 test split contains 578 rows across three storm
-                clusters. Final test scores and figures will be added
-                after the authorized evaluation using frozen settings.
-            </p>
+        <h3>Final Test Results</h3>
+        <p>
+            The 2026 test split contains 578 rows across three storm
+            clusters (19–21). The table below reports the single
+            authorized evaluation on 2026-11-24, using the frozen
+            settings and the thresholds selected on validation.
+            No test row falls in a cell unseen during training (0/578).
+        </p>
+
+        <div class="table-wrapper"
+            role="region"
+            aria-label="Final 2026 test results"
+            tabindex="0">
+            <table>
+                <caption>
+                    Performance on the held-out 2026 test set
+                    after decision threshold tuning
+                </caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Method</th>
+                        <th scope="col" class="numeric">&tau;*</th>
+                        <th scope="col" class="numeric">Balanced accuracy</th>
+                        <th scope="col" class="numeric">Macro F1</th>
+                        <th scope="col" class="numeric">Precision</th>
+                        <th scope="col" class="numeric">Recall</th>
+                        <th scope="col" class="numeric">ROC AUC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="row">Majority</th>
+                        <td class="numeric">&mdash;</td>
+                        <td class="numeric">0.5000</td>
+                        <td class="numeric">0.4442</td>
+                        <td class="numeric">0.0000</td>
+                        <td class="numeric">0.0000</td>
+                        <td class="numeric">0.5000</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Rainfall Cutoff</th>
+                        <td class="numeric">&mdash;</td>
+                        <td class="numeric">0.5723</td>
+                        <td class="numeric">0.5000</td>
+                        <td class="numeric">0.2466</td>
+                        <td class="numeric">0.6207</td>
+                        <td class="numeric">0.6023</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Place History</th>
+                        <td class="numeric">0.30</td>
+                        <td class="numeric">0.8963</td>
+                        <td class="numeric">0.8489</td>
+                        <td class="numeric">0.6688</td>
+                        <td class="numeric">0.9052</td>
+                        <td class="numeric">0.9375</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Gaussian Naive Bayes</th>
+                        <td class="numeric">0.05</td>
+                        <td class="numeric">0.6172</td>
+                        <td class="numeric">0.4622</td>
+                        <td class="numeric">0.2564</td>
+                        <td class="numeric">0.8621</td>
+                        <td class="numeric">0.6633</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Logistic Regression</th>
+                        <td class="numeric">0.45</td>
+                        <td class="numeric">0.6648</td>
+                        <td class="numeric">0.5314</td>
+                        <td class="numeric">0.2903</td>
+                        <td class="numeric">0.8534</td>
+                        <td class="numeric">0.7224</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">KNN (k = 5)</th>
+                        <td class="numeric">0.02</td>
+                        <td class="numeric">0.6282</td>
+                        <td class="numeric">0.5075</td>
+                        <td class="numeric">0.2706</td>
+                        <td class="numeric">0.7931</td>
+                        <td class="numeric">0.6815</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p>
+            Source:
+            <a href="https://github.com/persimon-c/weathering-with-you/blob/main/results/tables/comparison_test.csv">
+                2026 test comparison CSV
+            </a>.
+            &tau;* is the probability threshold selected on validation
+            and held fixed for the test run; the majority and
+            rainfall-cutoff baselines use no tuned threshold.
+        </p>
+
+        <figure>
+            <img
+                src="assets/roc_curves_test.png"
+                alt="ROC curves for the six methods on the 2026 test set. Place History has the highest AUC at 0.938; the rainfall rule reaches 0.602."
+                loading="lazy">
+            <figcaption>
+                Figure 6. ROC curves on the held-out 2026 test split.
+                Place History provides the strongest score ranking,
+                consistent with validation.
+            </figcaption>
+        </figure>
+
+        <figure>
+            <img
+                src="assets/test_map.png"
+                alt="Map of Place History predictions on the 2026 test set across the Philippines, distinguishing correct predictions, false positives, and false negatives."
+                loading="lazy">
+            <figcaption>
+                Figure 7. Spatial distribution of Place History test
+                predictions and errors.
+            </figcaption>
+        </figure>
+
+        <p>
+            Across the three test storm clusters, Place History
+            balanced accuracy ranged from 0.8911 (cluster 21) to
+            0.9490 (cluster 19). The
+            <a href="https://github.com/persimon-c/weathering-with-you/blob/main/results/tables/per_cluster_test.csv">
+                per-cluster test table
+            </a>
+            gives the breakdown for every method and cluster.
+        </p>
         </section>
 
         <section id="discussion">
@@ -798,6 +921,12 @@
                 0.8566 tuned balanced accuracy and 0.9069 ROC AUC.
                 The rainfall-only rule achieves 0.5089 balanced accuracy
                 and 0.5122 ROC AUC.
+            </p>
+            <p>
+                On the held-out 2026 test split, Place History retains
+                0.8963 balanced accuracy and 0.9375 ROC AUC across three
+                unseen storm clusters, while the rainfall-only rule
+                reaches 0.5723 balanced accuracy and 0.6023 ROC AUC.
             </p>
             <p>
                 Together with the feature-group experiment, these results
@@ -863,6 +992,13 @@
                     The 2026 split has only three storm clusters, limiting
                     the range of conditions represented.
                 </li>
+                <li>
+                    <strong>The test split measures temporal, not spatial,
+                    generalization.</strong>
+                    All 578 test rows fall in cells also observed during
+                    training (0/578 unseen), so performance on entirely new
+                    locations is not established.
+                </li>
             </ol>
         </section>
 
@@ -886,9 +1022,13 @@
             </p>
 
             <p>
-                Final conclusions about performance on the held-out
-                2026 year will be updated after the authorized test
-                evaluation.
+                On the held-out 2026 test split, Place History generalized
+                to unseen storms with 0.8963 balanced accuracy and 0.9375
+                ROC AUC across three clusters, while the rainfall-only and
+                majority baselines reached 0.5723 and 0.5000 balanced
+                accuracy. Because every test row lies in a cell observed
+                during training, this reflects temporal generalization
+                rather than performance on entirely new locations.
             </p>
 
             <h3>Future Work</h3>
@@ -1006,6 +1146,16 @@
                 <li>
                     <a href="https://github.com/persimon-c/weathering-with-you/blob/main/results/tables/comparison_validation_final.csv">
                         Tuned validation results
+                    </a>
+                </li>
+                <li>
+                    <a href="https://github.com/persimon-c/weathering-with-you/blob/main/results/tables/comparison_test.csv">
+                        2026 test results
+                    </a>
+                </li>
+                <li>
+                    <a href="https://github.com/persimon-c/weathering-with-you/blob/main/results/tables/per_cluster_test.csv">
+                        Per-cluster test results
                     </a>
                 </li>
             </ul>
