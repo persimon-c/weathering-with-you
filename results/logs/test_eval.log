@@ -1,0 +1,13 @@
+Wrote /home/simone/dev/weathering-with-you/results/figures/roc_curves_test.png
+Wrote /home/simone/dev/weathering-with-you/results/figures/test_map.png
+2026 test: 578 rows, 0 in cells unseen in training
+  cluster 19: 53 rows (9.2%)
+  cluster 20: 66 rows (11.4%)
+  cluster 21: 459 rows (79.4%)
+  majority       tau=-         BalAcc=0.500000 MacroF1=0.444231 AUC=0.500000
+  rainfall       tau=-         BalAcc=0.572250 MacroF1=0.500000 AUC=0.602319
+  place_history  tau=0.30      BalAcc=0.896309 MacroF1=0.848942 AUC=0.937509
+  naive_bayes    tau=0.05      BalAcc=0.617182 MacroF1=0.462244 AUC=0.663345
+  logistic       tau=0.45      BalAcc=0.664819 MacroF1=0.531366 AUC=0.722384
+  knn            tau=0.02      BalAcc=0.628153 MacroF1=0.507469 AUC=0.681501
+Wrote outputs under /home/simone/dev/weathering-with-you/results
