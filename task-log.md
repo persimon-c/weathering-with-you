@@ -69,6 +69,9 @@ Nicholas
 ## Milestone 4
 
 Simone
+- planned the milestone 4 runner and threshold-tuning work and implemented the pipeline and fair tau selection (#43, #44)
+- verified the clean-clone reproduction, the 187-test suite and the gated test-evaluation checks
+- reviewed the project-page scaffold (PR #54) and coordinated the milestone 4 deliverables
 
 
 Qlyve
@@ -80,4 +83,5 @@ Carlos
 - final test results and deployment remain pending
 
 Nicholas
-
+- implemented the clustered bootstrap, the per-cluster analysis and the gated test evaluator (#45, #46)
+- reviewed and validated the milestone 4 code pull requests (#50–#53)
