@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CMSC 170 project: predicting flood occurrence in the Philippines from Sentinel-1 flood labels and NASA POWER weather features.">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <title>Weathering With You | CMSC 170</title>
     <link rel="stylesheet" href="style.css">
 <script defer
@@ -122,6 +124,12 @@
             </li>
         </ul>
 
+        <p>
+            The PhilSA acquisition list was accessed on 4 November 2026.
+            Flood maps are licensed under CC BY 4.0; NASA POWER data are
+            free to use with credit to the NASA POWER Project.
+        </p>
+
         <h3>Dataset</h3>
         <div class="table-wrapper"
             role="region"
@@ -147,6 +155,10 @@
                     <tr>
                         <th scope="row">Period</th>
                         <td>August 2022–September 2026</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Access date</th>
+                        <td>4 November 2026 (PhilSA acquisition list)</td>
                     </tr>
                     <tr>
                         <th scope="row">Observations</th>
@@ -498,7 +510,7 @@
 
         <section id="results">
             <h2>Results</h2>
-        <h3>Baseline and Model Comparison</h3>
+            <h3>Baseline and Model Comparison</h3>
         <p>
             This comparison uses the original settings before probability
             threshold tuning. Place History and the learned models use
@@ -911,6 +923,43 @@
                 <li>
                     CMSC 170 AI Project Guidelines.
                     University of the Philippines Los Baños.
+                </li>
+                <li>
+                    Cover, T. M., &amp; Hart, P. E. (1967).
+                    <em>Nearest neighbor pattern classification.</em>
+                    IEEE Transactions on Information Theory, 13(1), 21–27.
+                    <a href="https://doi.org/10.1109/TIT.1967.1053964">
+                        https://doi.org/10.1109/TIT.1967.1053964
+                    </a>
+                </li>
+                <li>
+                    Fawcett, T. (2006).
+                    <em>An introduction to ROC analysis.</em>
+                    Pattern Recognition Letters, 27(8), 861–874.
+                    <a href="https://doi.org/10.1016/j.patrec.2005.10.010">
+                        https://doi.org/10.1016/j.patrec.2005.10.010
+                    </a>
+                </li>
+                <li>
+                    Hosmer, D. W., Lemeshow, S., &amp; Sturdivant, R. X. (2013).
+                    <em>Applied Logistic Regression</em> (3rd ed.). Wiley.
+                    <a href="https://doi.org/10.1002/9781118548387">
+                        https://doi.org/10.1002/9781118548387
+                    </a>
+                </li>
+                <li>
+                    Domingos, P., &amp; Pazzani, M. (1997).
+                    <em>On the optimality of the simple Bayesian classifier
+                    under zero-one loss.</em>
+                    Machine Learning, 29, 103–130.
+                    <a href="https://doi.org/10.1023/A:1007413511361">
+                        https://doi.org/10.1023/A:1007413511361
+                    </a>
+                </li>
+                <li>
+                    Efron, B., &amp; Tibshirani, R. J. (1993).
+                    <em>An Introduction to the Bootstrap.</em>
+                    Chapman &amp; Hall.
                 </li>
             </ol>
 
