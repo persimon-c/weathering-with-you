@@ -1,0 +1,489 @@
+:root {
+    color-scheme: dark;
+    --background: #0b1120;
+    --surface: #141e30;
+    --text: #e5edf7;
+    --muted: #a3b2c7;
+    --accent: #7dd3fc;
+    --border: #2a374b;
+    --content-width: 1080px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    background: var(--background);
+    color: var(--text);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+}
+
+header,
+main,
+footer {
+    width: min(calc(100% - 3rem), var(--content-width));
+    margin-inline: auto;
+}
+
+/* Typography */
+h1,
+h2,
+h3 {
+    color: var(--text);
+    line-height: 1.25;
+}
+
+h1 {
+    max-width: 16ch;
+    margin: 1rem 0 1.5rem;
+    font-size: clamp(2.75rem, 6vw, 5rem);
+    letter-spacing: -0.05em;
+}
+
+h2 {
+    margin: 0 0 1.25rem;
+    font-size: clamp(1.8rem, 4vw, 2.4rem);
+    letter-spacing: -0.035em;
+}
+
+h3 {
+    margin: 1.5rem 0 0.65rem;
+    font-size: 1.15rem;
+    letter-spacing: -0.015em;
+}
+
+p {
+    margin: 0 0 0.85rem;
+}
+
+strong {
+    font-weight: 650;
+}
+
+a {
+    color: var(--accent);
+    text-underline-offset: 0.25em;
+    text-decoration-color: #7dd3fc66;
+}
+
+a:hover {
+    text-decoration-color: var(--accent);
+}
+
+a:focus-visible,
+.table-wrapper:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 5px;
+    border-radius: 3px;
+}
+
+ul,
+ol {
+    padding-left: 1.4rem;
+}
+
+li + li {
+    margin-top: 0.35rem;
+}
+
+code {
+    padding: 0.15rem 0.4rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    font-size: 0.85em;
+    overflow-wrap: anywhere;
+}
+
+/* Sticky navigation */
+nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    width: 100%;
+    padding: 0.75rem max(1.5rem, calc((100% - 1320px) / 2));
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border);
+    background: var(--background);
+    box-shadow: 0 4px 16px #00000020;
+}
+
+nav a {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    min-height: 44px;
+    padding: 0.45rem 0.75rem;
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+nav a:hover,
+nav a:focus-visible {
+    background: var(--surface);
+    color: var(--text);
+}
+
+nav .nav-brand {
+    gap: 0.75rem;
+    margin-right: auto;
+    padding-left: 0;
+    padding-right: 2rem;
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 750;
+}
+
+nav .nav-brand:hover {
+    background: transparent;
+    color: var(--accent);
+}
+
+.brand-symbol {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    color: var(--accent);
+}
+
+/* Hero */
+#hero {
+    padding-block: 3.5rem;
+    border-bottom: 1px solid var(--border);
+    scroll-margin-top: 6rem;
+}
+
+.eyebrow {
+    margin: 0;
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.hero-description {
+    max-width: 52ch;
+    color: var(--muted);
+    font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+    line-height: 1.7;
+}
+
+.affiliation {
+    margin-top: 1.75rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.team {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    margin: 1rem 0 2rem;
+    padding: 0;
+    list-style: none;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.team li {
+    margin: 0;
+}
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.65rem 1.15rem;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--background);
+    font-size: 0.9rem;
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.button:hover {
+    background: var(--surface);
+    color: var(--accent);
+}
+
+/* Sections */
+section {
+    padding-block: 2.5rem;
+    border-bottom: 1px solid var(--border);
+    scroll-margin-top: 6rem;
+}
+
+section > ul,
+section > ol {
+    margin-block: 0.65rem 1rem;
+}
+
+section > :last-child {
+    margin-bottom: 0;
+}
+
+blockquote {
+    margin: 1rem 0;
+    padding: 1rem 1.25rem;
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    background: var(--surface);
+    font-size: 1.1rem;
+    line-height: 1.7;
+}
+
+/* Tables */
+.table-wrapper {
+    margin-block: 1rem;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+caption {
+    padding: 1rem 1.15rem;
+    color: var(--muted);
+    text-align: left;
+    font-size: 0.85rem;
+}
+
+thead {
+    background: var(--surface);
+}
+
+th,
+td {
+    padding: 0.65rem 0.9rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+}
+
+th {
+    font-weight: 600;
+}
+
+thead th {
+    font-size: 0.8rem;
+}
+
+tbody tr:last-child > * {
+    border-bottom: 0;
+}
+
+tbody tr:hover {
+    background: #7dd3fc06;
+}
+
+.numeric {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* Figures and equations */
+figure {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+figure img {
+    margin-inline: auto;
+    border-radius: 5px;
+}
+
+figcaption {
+    margin-top: 0.65rem;
+    padding-inline: 0.25rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.7;
+}
+
+mjx-container[display="true"] {
+    max-width: 100%;
+    margin-block: 0.75rem !important;
+    padding-block: 0.25rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* References and footer */
+#references a,
+#links a {
+    overflow-wrap: anywhere;
+}
+
+footer {
+    padding-block: 2.5rem 3rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+footer p {
+    margin-bottom: 0.35rem;
+}
+
+footer a {
+    display: inline-block;
+    margin-top: 1rem;
+}
+
+/* Keyboard navigation */
+.skip-link {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 200;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    background: var(--accent);
+    color: var(--background);
+    font-weight: 600;
+    transform: translateY(-200%);
+}
+
+.skip-link:focus {
+    transform: translateY(0);
+}
+
+/* Responsive layout */
+@media (max-width: 1100px) {
+    nav {
+        padding-inline: 1rem;
+    }
+
+    nav .nav-brand {
+        padding-right: 1rem;
+    }
+
+    nav a {
+        padding-inline: 0.6rem;
+    }
+}
+
+@media (max-width: 640px) {
+    header,
+    main,
+    footer {
+        width: calc(100% - 2rem);
+    }
+
+    #hero {
+        padding-block: 2.5rem;
+    }
+
+    section {
+        padding-block: 2rem;
+    }
+
+    .team {
+        flex-direction: column;
+    }
+
+    th,
+    td {
+        padding: 0.65rem;
+    }
+
+    figure {
+        padding: 0.65rem;
+    }
+
+    blockquote {
+        padding: 1rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+/* Refined top navigation */
+nav {
+    gap: 0.35rem;
+    padding-block: 0.65rem;
+    background: #10192a;
+    border-bottom-color: #34445c;
+    box-shadow: 0 6px 24px #00000030;
+}
+
+nav .nav-brand {
+    gap: 0.8rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.brand-symbol {
+    width: 42px;
+    height: 42px;
+    padding: 7px;
+    border: 1px solid #7dd3fc33;
+    border-radius: 12px;
+    background: #7dd3fc0d;
+}
+
+nav > a:not(.nav-brand) {
+    min-height: 40px;
+    border: 1px solid transparent;
+    font-weight: 500;
+    transition:
+        color 150ms ease,
+        background-color 150ms ease;
+}
+
+nav > a:not(.nav-brand):hover {
+    background: #ffffff08;
+    color: var(--text);
+}
+
+nav a[aria-current="location"] {
+    border-color: #7dd3fc33;
+    background: #7dd3fc12;
+    color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    nav > a:not(.nav-brand) {
+        transition: none;
+    }
+}

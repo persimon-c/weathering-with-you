@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CMSC 170 project: predicting flood occurrence in the Philippines from Sentinel-1 flood labels and NASA POWER weather features.">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <title>Weathering With You | CMSC 170</title>
+    <link rel="stylesheet" href="style.css">
+<script defer
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+</head>
+<body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <nav aria-label="Project sections">
+        <a class="nav-brand" href="#hero"
+        aria-label="Weathering With You home">
+            <svg class="brand-symbol"
+                viewBox="0 0 48 48"
+                fill="none"
+                aria-hidden="true">
+                <path
+                    d="M13 27a8 8 0 0 1-1-16
+                    11 11 0 0 1 21-1
+                    8.5 8.5 0 0 1 2 17H13Z"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"/>
+                <path
+                    d="M7 34c4-4 8 4 12 0s8 4 12 0 8 4 12 0
+                    M7 41c4-4 8 4 12 0s8 4 12 0 8 4 12 0"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"/>
+            </svg>
+            <span>Weathering With You</span>
+        </a>
+        <a href="#introduction">Introduction</a>
+        <a href="#data">Data</a>
+        <a href="#methods">Methods</a>
+        <a href="#experimental-setup">Setup</a>
+        <a href="#results">Results</a>
+        <a href="#discussion">Discussion</a>
+        <a href="#conclusion">Conclusion</a>
+        <a href="#references">References</a>
+        <a href="#links">Links</a>
+    </nav>
+
+    <header id="hero">
+        <p class="eyebrow">CMSC 170 · Artificial Intelligence</p>
+
+        <h1>Weathering With You</h1>
+
+        <p class="hero-description">
+            Predicting flood occurrence in the Philippines using
+            location, antecedent weather, and season.
+        </p>
+
+        <p class="affiliation">
+            University of the Philippines Los Baños
+        </p>
+
+        <ul class="team" aria-label="Project members">
+            <li>Simone Pauline M. Dagondon</li>
+            <li>Andrew Qlyve Paul C. Bundoc</li>
+            <li>Juan Carlos J. Bernardino</li>
+            <li>Nicholas O. Pacoma</li>
+        </ul>
+
+        <a class="button"
+           href="https://github.com/persimon-c/weathering-with-you">
+            View repository
+        </a>
+    </header>
+    <main id="main-content" tabindex="-1">
+    <section id="introduction">
+        <h2>Introduction</h2>
+
+        <p>
+            Tropical cyclones and the southwest monsoon repeatedly cause
+            flooding across the Philippines. The Philippine Space Agency
+            (PhilSA) publishes satellite-derived flood extent maps after
+            these events. This project investigates whether location,
+            weather before a satellite pass, and season can help predict
+            which geographic cells are classified as flooded.
+        </p>
+
+        <h3>Research Question</h3>
+        <blockquote>
+            How well can we predict which areas flood in a new storm,
+            and how much does weather before the storm add beyond
+            the place itself?
+        </blockquote>
+
+        <p>
+            We compare three machine learning algorithms implemented
+            from scratch using NumPy against three baselines.
+            Training, validation, and test data are separated by year,
+            keeping passes from the same storm cluster together.
+        </p>
+    </section>
+
+    <section id="data">
+        <h2>Data</h2>
+
+        <h3>Sources and Credits</h3>
+        <ul>
+            <li>
+                <strong>Flood labels:</strong>
+                PhilSA Sentinel-1 flood extent maps from the
+                <a href="https://data.humdata.org/organization/philsa">
+                    Humanitarian Data Exchange
+                </a>, licensed under Creative Commons Attribution.
+                Credit: Philippine Space Agency (PhilSA), via the
+                Humanitarian Data Exchange.
+            </li>
+            <li>
+                <strong>Weather and elevation:</strong>
+                <a href="https://power.larc.nasa.gov/">NASA POWER</a>
+                daily point API. Credit: NASA POWER Project.
+            </li>
+        </ul>
+
+        <p>
+            The PhilSA acquisition list was accessed on 4 November 2026.
+            Flood maps are licensed under CC BY 4.0; NASA POWER data are
+            free to use with credit to the NASA POWER Project.
+        </p>
+
+        <h3>Dataset</h3>
+        <div class="table-wrapper"
+            role="region"
+            aria-label="Dataset specifications"
+            tabindex="0">
+            <table>
+                <caption>Processed dataset overview</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Property</th>
+                        <th scope="col">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="row">Satellite</th>
+                        <td>Sentinel-1 synthetic aperture radar</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Acquisitions</th>
+                        <td>61 passes from 63 shapefiles</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Period</th>
+                        <td>August 2022–September 2026</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Access date</th>
+                        <td>4 November 2026 (PhilSA acquisition list)</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Observations</th>
+                        <td>3,531 cell-pass rows across 253 cells</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Cell size</th>
+                        <td>0.5° × 0.5°</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Row selection</th>
+                        <td>
+                            One satellite pass in a cell containing
+                            at least one mapped flood polygon
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Inputs</th>
+                        <td>
+                            14 features, plus a missing-soil-wetness
+                            indicator excluded from Gaussian Naive Bayes
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>Features</h3>
+        <ul>
+            <li>
+                <strong>Place:</strong>
+                latitude, longitude, and elevation.
+            </li>
+            <li>
+                <strong>Weather:</strong>
+                rainfall totals over 1, 3, 7, 14, 21, and 30 days;
+                relative humidity, temperature, and root-zone soil wetness.
+            </li>
+            <li>
+                <strong>Season:</strong>
+                <code>month_sin</code> and <code>month_cos</code>
+                encode the month cyclically.
+            </li>
+        </ul>
+
+        <p>
+            Weather windows end the day before the satellite pass.
+            No flood-map measurements are used as input features.
+        </p>
+
+        <h3>Flood Label</h3>
+        <p>
+            A cell-pass row is labeled flooded when the detected flooded
+            area exceeds 1% of the cell's total area. Exactly 1% is
+            classified as not flooded.
+        </p>
+
+        <p>
+            \[
+                y =
+                \begin{cases}
+                    1, &amp; \text{if flood share exceeds 1 percent} \\
+                    0, &amp; \text{otherwise}
+                \end{cases}
+            \]
+        </p>
+
+        <p>
+            This threshold distinguishes substantial detected flooding
+            from small amounts of mapped water. Sensitivity experiments
+            also evaluate thresholds of 0.5% and 2%.
+        </p>
+    </section>
+
+        <section id="methods">
+            <h2>Methods</h2>
+
+            <p>
+                We compare three baselines and three machine learning models.
+                The models, preprocessing, and evaluation metrics are implemented
+                from scratch using Python and NumPy.
+            </p>
+
+            <h3>Baselines</h3>
+            <div class="table-wrapper"
+                role="region"
+                aria-label="Baseline methods"
+                tabindex="0">
+                <table>
+                    <caption>Reference methods used to assess model performance</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Baseline</th>
+                            <th scope="col">Prediction rule</th>
+                            <th scope="col">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">Majority</th>
+                            <td>Always predicts not flooded.</td>
+                            <td>
+                                Shows why accuracy alone can be misleading
+                                with an imbalanced dataset.
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Rainfall cutoff</th>
+                            <td>
+                                Predicts flooded when 3-day rainfall exceeds
+                                50.98 mm, a cutoff selected on training data.
+                            </td>
+                            <td>Measures the predictive value of rainfall alone.</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Place history</th>
+                            <td>
+                                Uses each cell's historical flood rate from
+                                training data. Unseen cells use the overall
+                                training flood rate.
+                            </td>
+                            <td>
+                                Tests how much can be predicted from
+                                the place's previous observations.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Gaussian Naive Bayes</h3>
+            <p>
+                A probabilistic model that estimates a Gaussian distribution
+                for each feature within each class. It combines feature
+                likelihoods under the assumption that the features are
+                conditionally independent given the class.
+            </p>
+            <p>
+                \[
+                    P(y=c \mid \mathbf{x})
+                    \propto P(y=c)\prod_j P(x_j \mid y=c)
+                \]
+            </p>
+            <p>
+                Calculations use log probabilities for numerical stability.
+                The binary missing-soil-wetness indicator is excluded because
+                it caused near-zero-variance likelihood problems.
+            </p>
+
+            <h3>Logistic Regression</h3>
+            <p>
+                A linear classifier that maps a weighted combination of
+                features to a flood probability using the sigmoid function.
+            </p>
+            <p>
+                \[
+                    P(y=1 \mid \mathbf{x})
+                    = \frac{1}{1 + e^{-(\mathbf{w}^{T}\mathbf{x}+b)}}
+                \]
+            </p>
+            <p>
+                Training uses batch gradient descent, L2 regularization,
+                and balanced class weights to account for the smaller
+                flooded class.
+            </p>
+
+            <h3>K-Nearest Neighbors</h3>
+            <p>
+                An instance-based model that finds the nearest training rows
+                using Euclidean distance in standardized feature space.
+                Its flood probability is the fraction of those neighbors
+                labeled flooded.
+            </p>
+            <p>
+                \[
+                    \hat{p}(y=1 \mid \mathbf{x})
+                    = \frac{1}{k}
+                    \sum_{i \in \mathcal{N}_k(\mathbf{x})} y_i
+                \]
+            </p>
+            <p>
+                The comparison uses \(k=5\). Feature-group experiments
+                examine how adding weather and season changes the
+                neighborhoods selected by the model.
+            </p>
+
+            <h3>Why These Models?</h3>
+            <p>
+                Gaussian Naive Bayes tests a generative probabilistic approach,
+                logistic regression tests a linear decision boundary,
+                and KNN tests local similarity. Together, they help explain
+                how different model assumptions interact with geographic
+                and weather features.
+            </p>
+        </section>
+
+        <section id="experimental-setup">
+            <h2>Experimental Setup</h2>
+
+            <h3>Temporal Split</h3>
+            <p>
+                Data are separated by year. Passes from the same storm
+                cluster remain in one split to reduce leakage between
+                training and evaluation. A storm cluster groups passes
+                no more than seven days apart.
+            </p>
+
+            <div class="table-wrapper"
+                role="region"
+                aria-label="Training validation and test splits"
+                tabindex="0">
+                <table>
+                    <caption>Frozen year-based data splits</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Split</th>
+                            <th scope="col">Years</th>
+                            <th scope="col" class="numeric">Rows</th>
+                            <th scope="col" class="numeric">Passes</th>
+                            <th scope="col" class="numeric">Storm clusters</th>
+                            <th scope="col">Use</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">Training</th>
+                            <td>2022–2024</td>
+                            <td class="numeric">1,966</td>
+                            <td class="numeric">33</td>
+                            <td class="numeric">13</td>
+                            <td>Fit models and preprocessing</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Validation</th>
+                            <td>2025</td>
+                            <td class="numeric">987</td>
+                            <td class="numeric">16</td>
+                            <td class="numeric">5</td>
+                            <td>Select model settings and decision thresholds</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Test</th>
+                            <td>2026</td>
+                            <td class="numeric">578</td>
+                            <td class="numeric">12</td>
+                            <td class="numeric">3</td>
+                            <td>Final evaluation after settings are frozen</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Preprocessing</h3>
+            <ol>
+                <li>
+                    <strong>Impute missing values:</strong>
+                    fill missing soil wetness using the training median.
+                    Soil wetness is missing in 164 dataset rows.
+                </li>
+                <li>
+                    <strong>Track missingness:</strong>
+                    add a binary <code>soil_wetness_missing</code>
+                    indicator for logistic regression and KNN.
+                    Gaussian Naive Bayes excludes this indicator.
+                </li>
+                <li>
+                    <strong>Standardize inputs:</strong>
+                    fit preprocessing statistics on training rows and
+                    reuse them for validation and test data.
+                </li>
+            </ol>
+
+            <p>
+                \[
+                    z = \frac{x - \mu_{\mathrm{train}}}
+                            {\sigma_{\mathrm{train}}}
+                \]
+            </p>
+
+            <h3>Decision Threshold Tuning</h3>
+            <p>
+                The flood-area threshold defining the label remains fixed
+                at 1%. Separately, the probability threshold
+                \(\tau\) determines whether a model's score becomes
+                a positive prediction.
+            </p>
+            <p>
+                Decision thresholds are selected using validation balanced
+                accuracy over an 18-point grid from 0.02 to 0.90.
+                Ties favor the lower threshold.
+                Test results are not used to select settings.
+            </p>
+
+            <h3>Evaluation Metrics</h3>
+            <ul>
+                <li>
+                    <strong>Balanced accuracy:</strong>
+                    the average of recall and specificity.
+                </li>
+                <li>
+                    <strong>Macro F1:</strong>
+                    the unweighted average of F1 for the two classes.
+                </li>
+                <li>
+                    <strong>Precision and recall:</strong>
+                    measure false-alarm burden and detection of flooded rows.
+                </li>
+                <li>
+                    <strong>ROC AUC:</strong>
+                    measures score ranking across decision thresholds.
+                </li>
+                <li>
+                    <strong>Confusion matrix:</strong>
+                    records true positives, true negatives,
+                    false positives, and false negatives.
+                </li>
+            </ul>
+
+            <p>
+                \[
+                    \text{Balanced Accuracy}
+                    = \frac{\text{Recall} + \text{Specificity}}{2}
+                \]
+            </p>
+
+            <h3>Cluster Bootstrap and Per-Cluster Evaluation</h3>
+            <p>
+                Validation uncertainty is summarized using 1,000 bootstrap
+                draws with seed 0. Each draw resamples whole storm clusters
+                with replacement. Learned methods and Place History use
+                the same sampled clusters to calculate paired differences.
+            </p>
+
+            <p>
+                \[
+                    \Delta M
+                    = M_{\mathrm{learned}} - M_{\mathrm{place\ history}}
+                \]
+            </p>
+
+            <p>
+                The 2.5th and 97.5th percentiles form the reported 95%
+                intervals. Negative differences favor Place History.
+                Because validation contains only five storm clusters
+                with unequal sizes, these intervals are a secondary
+                summary; per-cluster results provide essential context.
+            </p>
+        </section>
+
+        <section id="results">
+            <h2>Results</h2>
+            <h3>Baseline and Model Comparison</h3>
+        <p>
+            This comparison uses the original settings before probability
+            threshold tuning. Place History and the learned models use
+            a probability threshold of 0.50; the rainfall rule uses its
+            training-selected rainfall cutoff.
+        </p>
+
+        <div class="table-wrapper"
+            role="region"
+            aria-label="Comparison of all six methods before threshold tuning"
+            tabindex="0">
+            <table>
+                <caption>
+                    Performance on the 2025 validation set before
+                    probability threshold tuning
+                </caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Method</th>
+                        <th scope="col" class="numeric">Balanced accuracy</th>
+                        <th scope="col" class="numeric">Macro F1</th>
+                        <th scope="col" class="numeric">Precision</th>
+                        <th scope="col" class="numeric">Recall</th>
+                        <th scope="col" class="numeric">ROC AUC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="row">Majority</th>
+                        <td class="numeric">0.5000</td>
+                        <td class="numeric">0.4486</td>
+                        <td class="numeric">0.0000</td>
+                        <td class="numeric">0.0000</td>
+                        <td class="numeric">0.5000</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Rainfall Cutoff</th>
+                        <td class="numeric">0.5089</td>
+                        <td class="numeric">0.4842</td>
+                        <td class="numeric">0.1935</td>
+                        <td class="numeric">0.3913</td>
+                        <td class="numeric">0.5122</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Place History</th>
+                        <td class="numeric">0.7816</td>
+                        <td class="numeric">0.7900</td>
+                        <td class="numeric">0.6824</td>
+                        <td class="numeric">0.6304</td>
+                        <td class="numeric">0.9069</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Gaussian Naive Bayes</th>
+                        <td class="numeric">0.5404</td>
+                        <td class="numeric">0.5428</td>
+                        <td class="numeric">0.2734</td>
+                        <td class="numeric">0.2065</td>
+                        <td class="numeric">0.6866</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Logistic Regression</th>
+                        <td class="numeric">0.7076</td>
+                        <td class="numeric">0.6527</td>
+                        <td class="numeric">0.3801</td>
+                        <td class="numeric">0.6630</td>
+                        <td class="numeric">0.7524</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">KNN (k = 5)</th>
+                        <td class="numeric">0.5675</td>
+                        <td class="numeric">0.5764</td>
+                        <td class="numeric">0.4595</td>
+                        <td class="numeric">0.1848</td>
+                        <td class="numeric">0.7066</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p>
+            Source:
+            <a href="https://github.com/persimon-c/weathering-with-you/blob/main/results/tables/comparison_main.csv">
+                Original validation comparison CSV
+            </a>.
+        </p>
+            <h3>Tuned Validation Results</h3>
+            <p>
+                Results below use the 2025 validation set: 987 rows
+                across five storm clusters. Each method's probability
+                threshold was selected using validation balanced accuracy,
+                so these scores reflect tuning on this split.
+            </p>
+
+            <div class="table-wrapper"
+                role="region"
+                aria-label="Tuned validation results"
+                tabindex="0">
+                <table>
+                    <caption>
+                        Validation performance after decision threshold tuning.
+                        Higher metric values are better.
+                    </caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Method</th>
+                            <th scope="col" class="numeric">Threshold</th>
+                            <th scope="col" class="numeric">Balanced accuracy</th>
+                            <th scope="col" class="numeric">Macro F1</th>
+                            <th scope="col" class="numeric">ROC AUC</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">Place History</th>
+                            <td class="numeric">0.30</td>
+                            <td class="numeric">0.8566</td>
+                            <td class="numeric">0.8133</td>
+                            <td class="numeric">0.9069</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Logistic Regression</th>
+                            <td class="numeric">0.45</td>
+                            <td class="numeric">0.7168</td>
+                            <td class="numeric">0.6385</td>
+                            <td class="numeric">0.7524</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">KNN (k = 5)</th>
+                            <td class="numeric">0.02</td>
+                            <td class="numeric">0.6647</td>
+                            <td class="numeric">0.5505</td>
+                            <td class="numeric">0.7066</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Gaussian Naive Bayes</th>
+                            <td class="numeric">0.05</td>
+                            <td class="numeric">0.6591</td>
+                            <td class="numeric">0.5368</td>
+                            <td class="numeric">0.6866</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p>
+                Source:
+                <a href="https://github.com/persimon-c/weathering-with-you/blob/main/results/tables/comparison_validation_final.csv">
+                    Tuned validation comparison CSV
+                </a>.
+                Majority and rainfall-cutoff baselines are reported separately
+                in the default comparison.
+            </p>
+
+            <h3>Paired Differences Against Place History</h3>
+            <p>
+                Differences subtract Place History's score from each learned
+                model's score. Negative values favor Place History.
+            </p>
+
+            <div class="table-wrapper"
+                role="region"
+                aria-label="Paired validation differences and confidence intervals"
+                tabindex="0">
+                <table>
+                    <caption>
+                        Paired metric differences with 95% cluster-bootstrap
+                        intervals, using 1,000 draws
+                    </caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Method</th>
+                            <th scope="col">Δ balanced accuracy [95% CI]</th>
+                            <th scope="col">Δ macro F1 [95% CI]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">Logistic Regression</th>
+                            <td>−0.140 [−0.210, −0.088]</td>
+                            <td>−0.175 [−0.277, −0.128]</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">KNN (k = 5)</th>
+                            <td>−0.192 [−0.242, −0.157]</td>
+                            <td>−0.263 [−0.325, −0.226]</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Gaussian Naive Bayes</th>
+                            <td>−0.198 [−0.246, −0.129]</td>
+                            <td>−0.277 [−0.330, −0.191]</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p>
+                All reported intervals lie below zero on this validation
+                split. Their interpretation is limited by the five storm
+                clusters and their unequal sizes; they do not establish
+                performance across all future storms.
+            </p>
+
+        <h3>Validation Figures</h3>
+        <p>
+            The metric comparison, feature-group experiment, per-cluster
+            results, and spatial map below show the earlier evaluation
+            before decision threshold tuning. They provide context
+            alongside the tuned results above.
+        </p>
+
+        <figure>
+            <img
+                src="assets/roc_curves.png"
+                alt="ROC curves for six methods. Place History has the highest AUC at 0.907; the rainfall rule scores 0.512."
+                loading="lazy">
+            <figcaption>
+                Figure 1. ROC curves on the 2025 validation set.
+                Place History provides the strongest score ranking.
+                ROC AUC does not depend on a single decision threshold.
+            </figcaption>
+        </figure>
+
+        <figure>
+            <img
+                src="assets/metric_bars.png"
+                alt="Balanced accuracy and macro F1 for six methods before probability threshold tuning. Place History achieves 0.782 balanced accuracy."
+                loading="lazy">
+            <figcaption>
+                Figure 2. Validation balanced accuracy and macro F1
+                before probability threshold tuning. These scores
+                differ from the tuned comparison above.
+            </figcaption>
+        </figure>
+
+        <figure>
+            <img
+                src="assets/feature_groups.png"
+                alt="Feature-group comparison for Naive Bayes, logistic regression, and KNN. KNN balanced accuracy falls from 0.795 with place features to 0.567 with all features."
+                loading="lazy">
+            <figcaption>
+                Figure 3. Feature-group ablation on validation data.
+                KNN performs better with place features alone than
+                with the full combination of place, weather, and season.
+            </figcaption>
+        </figure>
+
+        <figure>
+            <img
+                src="assets/per_cluster.png"
+                alt="Comparison of method performance across validation storm clusters 14 through 18."
+                loading="lazy">
+            <figcaption>
+                Figure 4. Validation performance by storm cluster.
+                Variation between clusters provides context that
+                an overall score can conceal.
+            </figcaption>
+        </figure>
+
+        <figure>
+            <img
+                src="assets/validation_map.png"
+                alt="Map of Place History validation predictions across the Philippines, distinguishing correct predictions, false positives, and false negatives."
+                loading="lazy">
+            <figcaption>
+                Figure 5. Spatial distribution of Place History
+                validation predictions and errors.
+            </figcaption>
+        </figure>
+
+        <h3>Final Test Results</h3>
+        <p>
+            The 2026 test split contains 578 rows across three storm
+            clusters (19–21). The table below reports the single
+            authorized evaluation on 2026-11-24, using the frozen
+            settings and the thresholds selected on validation.
+            No test row falls in a cell unseen during training (0/578).
+        </p>
+
+        <div class="table-wrapper"
+            role="region"
+            aria-label="Final 2026 test results"
+            tabindex="0">
+            <table>
+                <caption>
+                    Performance on the held-out 2026 test set
+                    after decision threshold tuning
+                </caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Method</th>
+                        <th scope="col" class="numeric">&tau;*</th>
+                        <th scope="col" class="numeric">Balanced accuracy</th>
+                        <th scope="col" class="numeric">Macro F1</th>
+                        <th scope="col" class="numeric">Precision</th>
+                        <th scope="col" class="numeric">Recall</th>
+                        <th scope="col" class="numeric">ROC AUC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="row">Majority</th>
+                        <td class="numeric">&mdash;</td>
+                        <td class="numeric">0.5000</td>
+                        <td class="numeric">0.4442</td>
+                        <td class="numeric">0.0000</td>
+                        <td class="numeric">0.0000</td>
+                        <td class="numeric">0.5000</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Rainfall Cutoff</th>
+                        <td class="numeric">&mdash;</td>
+                        <td class="numeric">0.5723</td>
+                        <td class="numeric">0.5000</td>
+                        <td class="numeric">0.2466</td>
+                        <td class="numeric">0.6207</td>
+                        <td class="numeric">0.6023</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Place History</th>
+                        <td class="numeric">0.30</td>
+                        <td class="numeric">0.8963</td>
+                        <td class="numeric">0.8489</td>
+                        <td class="numeric">0.6688</td>
+                        <td class="numeric">0.9052</td>
+                        <td class="numeric">0.9375</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Gaussian Naive Bayes</th>
+                        <td class="numeric">0.05</td>
+                        <td class="numeric">0.6172</td>
+                        <td class="numeric">0.4622</td>
+                        <td class="numeric">0.2564</td>
+                        <td class="numeric">0.8621</td>
+                        <td class="numeric">0.6633</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Logistic Regression</th>
+                        <td class="numeric">0.45</td>
+                        <td class="numeric">0.6648</td>
+                        <td class="numeric">0.5314</td>
+                        <td class="numeric">0.2903</td>
+                        <td class="numeric">0.8534</td>
+                        <td class="numeric">0.7224</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">KNN (k = 5)</th>
+                        <td class="numeric">0.02</td>
+                        <td class="numeric">0.6282</td>
+                        <td class="numeric">0.5075</td>
+                        <td class="numeric">0.2706</td>
+                        <td class="numeric">0.7931</td>
+                        <td class="numeric">0.6815</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p>
+            Source:
+            <a href="https://github.com/persimon-c/weathering-with-you/blob/main/results/tables/comparison_test.csv">
+                2026 test comparison CSV
+            </a>.
+            &tau;* is the probability threshold selected on validation
+            and held fixed for the test run; the majority and
+            rainfall-cutoff baselines use no tuned threshold.
+        </p>
+
+        <figure>
+            <img
+                src="assets/roc_curves_test.png"
+                alt="ROC curves for the six methods on the 2026 test set. Place History has the highest AUC at 0.938; the rainfall rule reaches 0.602."
+                loading="lazy">
+            <figcaption>
+                Figure 6. ROC curves on the held-out 2026 test split.
+                Place History provides the strongest score ranking,
+                consistent with validation.
+            </figcaption>
+        </figure>
+
+        <figure>
+            <img
+                src="assets/test_map.png"
+                alt="Map of Place History predictions on the 2026 test set across the Philippines, distinguishing correct predictions, false positives, and false negatives."
+                loading="lazy">
+            <figcaption>
+                Figure 7. Spatial distribution of Place History test
+                predictions and errors.
+            </figcaption>
+        </figure>
+
+        <p>
+            Across the three test storm clusters, Place History
+            balanced accuracy ranged from 0.8911 (cluster 21) to
+            0.9490 (cluster 19). The
+            <a href="https://github.com/persimon-c/weathering-with-you/blob/main/results/tables/per_cluster_test.csv">
+                per-cluster test table
+            </a>
+            gives the breakdown for every method and cluster.
+        </p>
+        </section>
+
+        <section id="discussion">
+            <h2>Discussion</h2>
+
+            <h3>Place History Provides the Strongest Baseline</h3>
+            <p>
+                On the 2025 validation split, Place History achieves
+                0.8566 tuned balanced accuracy and 0.9069 ROC AUC.
+                The rainfall-only rule achieves 0.5089 balanced accuracy
+                and 0.5122 ROC AUC.
+            </p>
+            <p>
+                On the held-out 2026 test split, Place History retains
+                0.8963 balanced accuracy and 0.9375 ROC AUC across three
+                unseen storm clusters, while the rainfall-only rule
+                reaches 0.5723 balanced accuracy and 0.6023 ROC AUC.
+            </p>
+            <p>
+                Together with the feature-group experiment, these results
+                suggest that repeated observations of the same places
+                provide more predictive information than the weather
+                features used here. This finding applies to this dataset
+                and evaluation setup; it does not imply that rainfall
+                is unimportant to the physical causes of flooding.
+            </p>
+
+            <h3>Model Geometry Limits Spatial Predictions</h3>
+            <p>
+                Gaussian Naive Bayes fits independent Gaussian distributions
+                to features within each class. These assumptions restrict
+                its ability to represent fragmented geographic patterns
+                and dependencies between location and elevation.
+            </p>
+            <p>
+                Logistic regression learns a linear boundary in feature
+                space. Elevation can help separate lower and higher terrain,
+                but a linear boundary cannot directly outline irregular,
+                disconnected flood-prone areas.
+            </p>
+
+            <h3>Additional Features Can Weaken KNN Neighborhoods</h3>
+            <p>
+                KNN reaches approximately 0.795 validation balanced accuracy
+                using place features alone, compared with 0.567 using the
+                full feature set before threshold tuning.
+            </p>
+            <p>
+                Repeated observations of the same cell are close in place
+                feature space. Adding weather dimensions changes those
+                distances and can select geographically different neighbors.
+                This offers an explanation for the observed decline;
+                adding more features does not automatically improve
+                prediction.
+            </p>
+
+            <h3>Limitations</h3>
+            <ol>
+                <li>
+                    <strong>Labels are not ground-checked.</strong>
+                    PhilSA's satellite-derived detections may underestimate
+                    floods in cities and dense vegetation.
+                </li>
+                <li>
+                    <strong>Rice-paddy water can be detected as flooding.</strong>
+                    Labels can reflect agricultural seasons as well as storms.
+                </li>
+                <li>
+                    <strong>Weather inputs are coarse.</strong>
+                    NASA POWER uses a 0.5° × 0.625° model grid rather than
+                    local rain-gauge observations.
+                </li>
+                <li>
+                    <strong>Some cells are only partly observed.</strong>
+                    Cells near satellite-pass boundaries have incomplete
+                    coverage, affecting measured flood share.
+                </li>
+                <li>
+                    <strong>The test sample contains few storms.</strong>
+                    The 2026 split has only three storm clusters, limiting
+                    the range of conditions represented.
+                </li>
+                <li>
+                    <strong>The test split measures temporal, not spatial,
+                    generalization.</strong>
+                    All 578 test rows fall in cells also observed during
+                    training (0/578 unseen), so performance on entirely new
+                    locations is not established.
+                </li>
+            </ol>
+        </section>
+
+        <section id="conclusion">
+            <h2>Conclusion</h2>
+
+            <p>
+                We implemented three machine learning models and three
+                baselines from scratch to study satellite-derived flood
+                labels in the Philippines.
+                On validation data, historical flood rates by cell
+                outperform the learned models, while the tested weather
+                features provide limited additional predictive value.
+            </p>
+
+            <p>
+                The experiments demonstrate the importance of strong
+                domain baselines, feature selection, and evaluation
+                by storm cluster. They also show why high overall
+                accuracy can conceal poor detection of the flooded class.
+            </p>
+
+            <p>
+                On the held-out 2026 test split, Place History generalized
+                to unseen storms with 0.8963 balanced accuracy and 0.9375
+                ROC AUC across three clusters, while the rainfall-only and
+                majority baselines reached 0.5723 and 0.5000 balanced
+                accuracy. The best learned model, logistic regression,
+                reached 0.6648, and Place History led in all three test
+                clusters. Because every test row lies in a cell observed
+                during training, this reflects temporal generalization
+                rather than performance on entirely new locations.
+            </p>
+
+            <h3>Future Work</h3>
+            <p>
+                Future experiments could evaluate higher-resolution terrain
+                and weather inputs, hydrological features, weighted KNN
+                distances, and performance on previously unseen places.
+                More independent storm observations would strengthen
+                the assessment of generalization.
+            </p>
+        </section>
+
+        <section id="references">
+            <h2>References</h2>
+
+            <ol>
+                <li>
+                    Philippine Space Agency (PhilSA).
+                    <em>Flood extent maps.</em>
+                    <a href="https://data.humdata.org/organization/philsa">
+                        Humanitarian Data Exchange
+                    </a>.
+                    Licensed under Creative Commons Attribution.
+                </li>
+                <li>
+                    NASA POWER Project.
+                    <em>Prediction of Worldwide Energy Resources.</em>
+                    <a href="https://power.larc.nasa.gov/">
+                        NASA POWER website and data access
+                    </a>.
+                </li>
+                <li>
+                    CMSC 170 AI Project Guidelines.
+                    University of the Philippines Los Baños.
+                </li>
+                <li>
+                    Cover, T. M., &amp; Hart, P. E. (1967).
+                    <em>Nearest neighbor pattern classification.</em>
+                    IEEE Transactions on Information Theory, 13(1), 21–27.
+                    <a href="https://doi.org/10.1109/TIT.1967.1053964">
+                        https://doi.org/10.1109/TIT.1967.1053964
+                    </a>
+                </li>
+                <li>
+                    Fawcett, T. (2006).
+                    <em>An introduction to ROC analysis.</em>
+                    Pattern Recognition Letters, 27(8), 861–874.
+                    <a href="https://doi.org/10.1016/j.patrec.2005.10.010">
+                        https://doi.org/10.1016/j.patrec.2005.10.010
+                    </a>
+                </li>
+                <li>
+                    Hosmer, D. W., Lemeshow, S., &amp; Sturdivant, R. X. (2013).
+                    <em>Applied Logistic Regression</em> (3rd ed.). Wiley.
+                    <a href="https://doi.org/10.1002/9781118548387">
+                        https://doi.org/10.1002/9781118548387
+                    </a>
+                </li>
+                <li>
+                    Domingos, P., &amp; Pazzani, M. (1997).
+                    <em>On the optimality of the simple Bayesian classifier
+                    under zero-one loss.</em>
+                    Machine Learning, 29, 103–130.
+                    <a href="https://doi.org/10.1023/A:1007413511361">
+                        https://doi.org/10.1023/A:1007413511361
+                    </a>
+                </li>
+                <li>
+                    Efron, B., &amp; Tibshirani, R. J. (1993).
+                    <em>An Introduction to the Bootstrap.</em>
+                    Chapman &amp; Hall.
+                </li>
+            </ol>
+
+            <p>
+                Flood map credit: Philippine Space Agency (PhilSA),
+                via the Humanitarian Data Exchange.
+                Weather data credit: NASA POWER Project.
+            </p>
+
+            <h3>Project Documentation</h3>
+            <ul>
+                <li>
+                    <a href="https://github.com/persimon-c/weathering-with-you/blob/main/design.md">
+                        Research design, decisions, and limitations
+                    </a>
+                </li>
+                <li>
+                    <a href="https://github.com/persimon-c/weathering-with-you/blob/main/data/README.md">
+                        Data acquisition, sources, and processing
+                    </a>
+                </li>
+                <li>
+                    <a href="https://github.com/persimon-c/weathering-with-you#ai-tool-use-disclosure">
+                        AI tool use disclosure
+                    </a>
+                </li>
+            </ul>
+        </section>
+
+        <section id="links">
+            <h2>Links</h2>
+
+            <ul>
+                <li>
+                    <a href="https://github.com/persimon-c/weathering-with-you">
+                        Source code and reproduction instructions
+                    </a>
+                </li>
+                <li>
+                    <a href="https://github.com/persimon-c/weathering-with-you/blob/main/task-log.md">
+                        Member contributions and task log
+                    </a>
+                </li>
+                <li>
+                    <a href="https://github.com/persimon-c/weathering-with-you/blob/main/results/tables/comparison_validation_final.csv">
+                        Tuned validation results
+                    </a>
+                </li>
+                <li>
+                    <a href="https://github.com/persimon-c/weathering-with-you/blob/main/results/tables/comparison_test.csv">
+                        2026 test results
+                    </a>
+                </li>
+                <li>
+                    <a href="https://github.com/persimon-c/weathering-with-you/blob/main/results/tables/per_cluster_test.csv">
+                        Per-cluster test results
+                    </a>
+                </li>
+                <li>
+                    <a href="https://github.com/persimon-c/weathering-with-you/blob/main/M4-Report.md">
+                        Milestone 4 report
+                    </a>
+                </li>
+            </ul>
+
+            <p>
+                The presentation slides will be linked here when available.
+            </p>
+        </section>
+    </main>
+<footer>
+    <p>Weathering With You · CMSC 170</p>
+    <p>
+        University of the Philippines Los Baños
+        · Institute of Computer Science
+    </p>
+    <a href="#hero">Back to top ↑</a>
+</footer>
+
+<script>
+    const navigation = document.querySelector("nav");
+    const sectionLinks = [
+        ...navigation.querySelectorAll('a[href^="#"]:not(.nav-brand)')
+    ];
+    const linkedSections = sectionLinks.map(link =>
+        document.querySelector(link.getAttribute("href"))
+    );
+
+    let clickedSection = null;
+    let updatePending = false;
+
+    function highlightLink(section) {
+        for (const link of sectionLinks) {
+            if (
+                section &&
+                link.getAttribute("href") === "#" + section.id
+            ) {
+                link.setAttribute("aria-current", "location");
+            } else {
+                link.removeAttribute("aria-current");
+            }
+        }
+    }
+
+    function updateCurrentSection() {
+        updatePending = false;
+
+        if (clickedSection) {
+            highlightLink(clickedSection);
+            return;
+        }
+
+        const marker = navigation.getBoundingClientRect().bottom + 32;
+        let currentSection = null;
+
+        for (const section of linkedSections) {
+            if (section && section.getBoundingClientRect().top <= marker) {
+                currentSection = section;
+            }
+        }
+
+        const atBottom =
+            window.scrollY + window.innerHeight >=
+            document.documentElement.scrollHeight - 4;
+
+        if (atBottom) {
+            currentSection = linkedSections[linkedSections.length - 1];
+        }
+
+        highlightLink(currentSection);
+    }
+
+    function scheduleUpdate() {
+        if (!updatePending) {
+            updatePending = true;
+            requestAnimationFrame(updateCurrentSection);
+        }
+    }
+
+    function resumeScrollTracking() {
+        clickedSection = null;
+        scheduleUpdate();
+    }
+
+    for (const link of sectionLinks) {
+        link.addEventListener("click", event => {
+            if (
+                event.ctrlKey || event.metaKey ||
+                event.shiftKey || event.altKey
+            ) {
+                return;
+            }
+
+            clickedSection = document.querySelector(
+                link.getAttribute("href")
+            );
+            highlightLink(clickedSection);
+        });
+    }
+
+    /* Manual scrolling releases the clicked selection. */
+    window.addEventListener("wheel", resumeScrollTracking, {
+        passive: true
+    });
+    window.addEventListener("touchmove", resumeScrollTracking, {
+        passive: true
+    });
+
+    window.addEventListener("keydown", event => {
+        if (event.target.closest(
+            'input, textarea, select, [contenteditable="true"]'
+        )) {
+            return;
+        }
+
+        const scrollKeys = [
+            "ArrowUp", "ArrowDown", "PageUp",
+            "PageDown", "Home", "End", " "
+        ];
+
+        if (scrollKeys.includes(event.key)) {
+            resumeScrollTracking();
+        }
+    });
+
+    /* Also support scrollbar dragging and other page interactions. */
+    window.addEventListener("pointerdown", event => {
+        if (!navigation.contains(event.target)) {
+            resumeScrollTracking();
+        }
+    });
+
+    document.querySelectorAll('a[href="#hero"]').forEach(link => {
+        link.addEventListener("click", resumeScrollTracking);
+    });
+
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", resumeScrollTracking);
+    window.addEventListener("load", scheduleUpdate);
+
+    updateCurrentSection();
+</script>
+</body>
+</html>

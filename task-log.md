@@ -65,3 +65,23 @@ Nicholas
 - found the Naive Bayes missing-soil flag issue and fixed it in the shared preprocessing (#37)
 - reviewed #33 to #36 and #38, fixed the merge conflicts in #35 and #36, moved #34 to the shared setup, and merged them
 - checked main against the milestone 3 requirements and fixed three doc details (#41)
+
+## Milestone 4
+
+Simone
+- planned the milestone 4 runner and threshold-tuning work and implemented the pipeline and fair tau selection (#43, #44)
+- verified the clean-clone reproduction, the 187-test suite and the gated test-evaluation checks
+- reviewed the project-page scaffold (PR #54) and coordinated the milestone 4 deliverables
+
+
+Qlyve
+- helped draft and refine the research content presented on the project page (#47)
+
+
+Carlos
+- built the responsive project page, navigation, branding and MathJax setup (#47)
+- integrated research content, validation tables, figures and references
+
+Nicholas
+- implemented the clustered bootstrap, the per-cluster analysis and the gated test evaluator (#45, #46)
+- reviewed and validated the milestone 4 code pull requests (#50–#53)

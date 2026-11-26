@@ -6,6 +6,8 @@ Flood labels come from the Philippine Space Agency (PhilSA) flood extent maps on
 
 License: the PhilSA data is CC BY. Credit "Philippine Space Agency (PhilSA), via the Humanitarian Data Exchange" wherever it is used. PhilSA notes that the maps are not validated with ground data. NASA POWER data is free to use with credit to the NASA POWER Project.
 
+Access date: the PhilSA acquisition list was accessed on 4 November 2026.
+
 ## Files
 
 | Path | In git | Contents |
