@@ -33,6 +33,7 @@
 | Simone | Reproduction runner, checksum manifest, license, leakage audit | PR #50, `scripts/run_all.py`, `results/leakage_audit.md` |
 | Simone | Fair decision-threshold tuning | PR #51, `scripts/run_threshold_tuning.py`, `results/tables/threshold_tuning.csv` |
 | Simone | Ran the single 2026 test evaluation after the freeze | commits `145f924` to `05d7607`, `results/logs/test_eval.log` |
+| Simone | Published the test results, figures and metadata on the project page | PR #54, commits `c631845`, `94f97f8` |
 | Nicholas | Cluster bootstrap and paired difference intervals | PR #52, `src/metrics.py::cluster_bootstrap`, `results/tables/comparison_validation_final.csv` |
 | Nicholas | Gated single-run test evaluation script and test write-up | PR #53, `scripts/evaluate_test.py`, `results/test_evaluation.md` |
 | Nicholas | Reviewed and merged the M4 code PRs, fixed the Windows checksum failure | reviews on PRs #50 and #51 |
