@@ -81,7 +81,6 @@ Qlyve
 Carlos
 - built the responsive project page, navigation, branding and MathJax setup (#47)
 - integrated research content, validation tables, figures and references
-- final test results and deployment remain pending
 
 Nicholas
 - implemented the clustered bootstrap, the per-cluster analysis and the gated test evaluator (#45, #46)
