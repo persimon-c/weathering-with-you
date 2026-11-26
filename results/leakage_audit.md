@@ -58,7 +58,7 @@ This document records the empirical verification of the 11-point data leakage ch
 
 ### 10. Single Test Set Evaluation Gate
 - **Status:** PASS
-- **Empirical Evidence:** The 2026 test set ($N=578$) remains completely quarantined. No test scores have been computed or stored. The evaluation script (`scripts/evaluate_test.py`) will be executed exactly once following the Tuesday Nov 24 18:00 PHT code freeze (Issue #46).
+- **Empirical Evidence:** The 2026 test set ($N=578$) stayed quarantined until the code freeze. `scripts/evaluate_test.py` refuses to run before Tue 24 Nov 2026 18:00 PHT, off `main`, with a dirty tree, or once any test output exists. It was run once, at 18:21 PHT on 24 Nov, at frozen commit `8c74e98` (Issue #46); the console output is in `results/logs/test_eval.log` and the results in `results/test_evaluation.md`.
 
 ### 11. Reported Result is Not Best of Many Test Evaluations
 - **Status:** PASS

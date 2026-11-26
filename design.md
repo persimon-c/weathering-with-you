@@ -198,7 +198,7 @@ Allowed libraries: the Python standard library, NumPy for arrays and basic linea
 
 ### Test set status
 
-The **2026 test set was not used for training, tuning, or scoring**. All exploratory analyses, hyperparameter tuning, model comparisons, feature-group ablations, and threshold sensitivity experiments have been conducted strictly on the 2022–2024 training set (1,966 rows) and 2025 validation set (987 rows). The 578 rows from 2026 (12 passes across 3 storm clusters) are preserved untouched for final evaluation in Milestone 4.
+The **2026 test set was never used for training or tuning**. All exploratory analyses, hyperparameter tuning, model comparisons, feature-group ablations, and threshold experiments were run on the 2022–2024 training set (1,966 rows) and the 2025 validation set (987 rows). The 578 test rows (12 passes across 3 storm clusters) were scored **once**, on Tue 24 Nov 2026 at 18:21 PHT, after the code freeze, at frozen commit `8c74e98`. Place history reached balanced accuracy 0.896 and the best learned model, logistic regression, 0.665; see [`results/test_evaluation.md`](results/test_evaluation.md).
 
 ## Milestone plan
 

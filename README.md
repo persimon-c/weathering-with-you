@@ -31,7 +31,7 @@ pip install -r requirements.txt
 
 ## Results
 
-All evaluations are performed on the **2025 validation set** (987 rows from 16 Sentinel-1 passes across 5 storm clusters). The **2026 test set (578 rows) was not used for training, tuning, or scoring** and is held out for Milestone 4.
+Model selection and tuning used only the **2025 validation set** (987 rows from 16 Sentinel-1 passes across 5 storm clusters). The tables below are validation results. The **2026 test set (578 rows)** was scored once, after the code freeze, at frozen commit `8c74e98`; see [Final test results](#final-test-results).
 
 ### Main Comparison Table
 
@@ -67,6 +67,21 @@ Source commit `3e8e3e5`. The table compares all three baselines and three machin
   - *Logistic Regression* forms a single planar dividing boundary across coordinates $(lat, lon)$, unable to isolate localized flood-prone valleys. However, negative weights on elevation and balanced class weights allow it to achieve a competitive 0.708 balanced accuracy.
 - **Why KNN finds the same cell in other storms:**
   - On place features alone $(lat, lon, elevation)$, KNN ($k=5$) achieves **0.795 balanced accuracy** and **0.910 ROC AUC**, because the nearest historical rows are the exact same 0.5° tile observed in 2022–2024. Adding 9 noisy weather dimensions dilutes spatial proximity in Euclidean space, dropping KNN's balanced accuracy to 0.567.
+
+### Final test results
+
+Scored once on the 2026 test set (578 rows, 3 storm clusters) at frozen commit `8c74e98`, each method at its validation-tuned threshold. Details, per-cluster results and the validation-to-test comparison are in [`results/test_evaluation.md`](results/test_evaluation.md).
+
+| Method | Balanced accuracy | Macro F1 | ROC AUC |
+|---|---:|---:|---:|
+| Majority | 0.500 | 0.444 | 0.500 |
+| Rain rule | 0.572 | 0.500 | 0.602 |
+| Place history | **0.896** | **0.849** | **0.938** |
+| Naive Bayes | 0.617 | 0.462 | 0.663 |
+| Logistic regression | 0.665 | 0.531 | 0.722 |
+| KNN (k = 5) | 0.628 | 0.507 | 0.682 |
+
+![ROC curves on the 2026 test set](results/figures/roc_curves_test.png)
 
 ## Reproduce the results
 
@@ -132,10 +147,9 @@ The processed dataset, `data/processed/flood_data.csv`, is already in the reposi
     ```
     python scripts/plot_results.py
     ```
-15. Final 2026 test run, once only. The script refuses before Tue 24 Nov 2026 18:00 PHT, off `main`, with a dirty tree, or once test outputs exist. `--dry-run` scores validation into a temp folder instead:
+15. Final 2026 test run, once only. It ran on 24 Nov 2026 and its outputs are committed, so `python scripts/evaluate_test.py` now refuses to score the test set again. `--dry-run` still scores validation into a temp folder to check the script:
     ```
     python scripts/evaluate_test.py --dry-run
-    python scripts/evaluate_test.py
     ```
 
 Alternatively, run the complete end-to-end reproduction pipeline and verify all artifact checksums with a single command:
